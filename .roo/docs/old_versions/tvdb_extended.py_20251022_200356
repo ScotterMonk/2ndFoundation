@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+"""
+TVDB Extended Information Script
+
+This script retrieves detailed information about a movie or TV show from TVDB,
+including episode data for TV shows.
+
+Usage:
+    python tvdb_extended.py <type> <tvdb_id>
+    
+    type: 'movie' or 'show'
+    tvdb_id: The TVDB ID of the content
+
+Docs:
+    https://thetvdb.github.io/v4-api/
+"""
+
+import sys
+import json
+import os
+from datetime import datetime, timedelta
+import requests
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Constants
+API_BASE_URL = "https://api4.thetvdb.com/v4"
+TOKEN_FILE = os.path.join(os.path.dirname(__file__), '.tvdb_token')
+API_KEY = os.getenv('TVDB_API_KEY')
+
+if not API_KEY:
+    print(json.dumps({
+        "error": "TVDB_API_KEY not found in environment variables",
+        "status": "error"
+    }, indent=2))
+    sys.exit(1)
+
+
+def load_token():
+    """Load existing token from file if valid."""
+    if not os.path.exists(TOKEN_FILE):
+        return None
+    
+    try:
+        with open(TOKEN_FILE, 'r') as f:
+            token_data = json.load(f)
+        
+        # Check if token is still valid (25 days from creation)
+        created_at = datetime.fromisoformat(token_data['created_at'])
+        expires_at = created_at + timedelta(days=25)
+        
+        if datetime.now() < expires_at:
+            return token_data['token']
+        else:
+            return None
+    except (json.JSONDecodeError, KeyError, ValueError):
+        return None
+
+
+def save_token(token):
+    """Save token to file with creation timestamp."""
+    token_data = {
+        'token': token,
+        'created_at': datetime.now().isoformat()
+    }
+    with open(TOKEN_FILE, 'w') as f:
+        json.dump(token_data, f)
+
+
+def authenticate():
+    """Authenticate with TVDB API and return bearer token."""
+    url = f"{API_BASE_URL}/login"
+    headers = {'Content-Type': 'application/json'}
+    data = {'apikey': API_KEY}
+    
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+        
+        result = response.json()
+        token = result['data']['token']
+        save_token(token)
+        return token
+        
+    except requests.exceptions.RequestException as e:
+        print(json.dumps({
+            "error": f"Authentication failed: {str(e)}",
+            "status": "error"
+        }, indent=2))
+        sys.exit(1)
+    except (KeyError, json.JSONDecodeError) as e:
+        print(json.dumps({
+            "error": f"Invalid authentication response: {str(e)}",
+            "status": "error"
+        }, indent=2))
+        sys.exit(1)
+
+
+def get_valid_token():
+    """Get a valid authentication token."""
+    token = load_token()
+    if not token:
+        token = authenticate()
+    return token
+
+
+def get_movie_extended(movie_id):
+    """Get extended information for a movie."""
+    token = get_valid_token()
+    url = f"{API_BASE_URL}/movies/{movie_id}/extended"
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 401:
+            # Token might be expired, try to re-authenticate
+            token = authenticate()
+            headers['Authorization'] = f'Bearer {token}'
+            response = requests.get(url, headers=headers)
+        
+        response.raise_for_status()
+        return response.json()
+        
+    except requests.exceptions.RequestException as e:
+        return {
+            "error": f"Failed to fetch movie data: {str(e)}",
+            "status": "error"
+        }
+
+
+def get_series_extended(series_id):
+    """Get extended information for a TV series, including episodes."""
+    token = get_valid_token()
+    url = f"{API_BASE_URL}/series/{series_id}/extended"
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 401:
+            # Token might be expired, try to re-authenticate
+            token = authenticate()
+            headers['Authorization'] = f'Bearer {token}'
+            response = requests.get(url, headers=headers)
+        
+        response.raise_for_status()
+        return response.json()
+        
+    except requests.exceptions.RequestException as e:
+        return {
+            "error": f"Failed to fetch series data: {str(e)}",
+            "status": "error"
+        }
+
+
+def main():
+    """Main function to handle command-line arguments and execute the script."""
+    if len(sys.argv) != 3:
+        print(json.dumps({
+            "error": "Invalid arguments",
+            "usage": "python tvdb_extended.py <type> <tvdb_id>",
+            "type": "Use 'movie' or 'show'",
+            "example": "python tvdb_extended.py show 81189",
+            "status": "error"
+        }, indent=2))
+        sys.exit(1)
+    
+    content_type = sys.argv[1].lower()
+    tvdb_id = sys.argv[2]
+    
+    if content_type not in ['movie', 'show']:
+        print(json.dumps({
+            "error": "Invalid content type",
+            "valid_types": ["movie", "show"],
+            "provided": content_type,
+            "status": "error"
+        }, indent=2))
+        sys.exit(1)
+    
+    try:
+        tvdb_id = int(tvdb_id)
+    except ValueError:
+        print(json.dumps({
+            "error": "Invalid TVDB ID",
+            "message": "TVDB ID must be a number",
+            "status": "error"
+        }, indent=2))
+        sys.exit(1)
+    
+    if content_type == 'movie':
+        data = get_movie_extended(tvdb_id)
+    else:
+        data = get_series_extended(tvdb_id)
+    
+    # Output the raw JSON data directly from the API
+    print(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()

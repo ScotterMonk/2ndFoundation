@@ -1,0 +1,1116 @@
+"""
+Stateless IMDb core functionality for MediaShare.
+
+This module provides a consolidated, stateless, role-agnostic interface to IMDb functionality.
+No Flask imports or current_user usage. No database writes here - purely for data retrieval 
+and transformation.
+
+This core layer can be reused by admin/user layers without Flask context dependencies.
+All core IMDb API functions are consolidated here to serve as the single interface.
+"""
+
+import re
+import json
+import os
+import requests
+from typing import Dict, Any, Optional, Union, List, Tuple
+from urllib.parse import quote_plus
+from .api_provider_core import BaseApiProvider
+from .api_provider_descriptors import IMDB_DESCRIPTOR
+
+__all__ = [
+    'imdb_details_fetch_core',
+    'imdb_search_core',
+    'imdb_rating_core',
+    'imdb_import_core',
+    'imdb_id_normalize',
+    'imdb_item_normalize',
+    'imdb_api_search_title',
+    'imdb_api_search_by_director_name',
+    'imdb_api_get_details',
+    'imdb_details_normalize',
+    'imdb_rating_scrape',
+    'imdb_title_search_fallback',
+    'imdb_search_for_media_core'
+]
+
+# Instantiate the IMDb API provider
+imdb_provider = BaseApiProvider(IMDB_DESCRIPTOR)
+
+# ===== Core IMDb ID and Data Normalization =====
+
+def imdb_id_normalize(value: Optional[str]) -> Optional[str]:
+    """
+    Normalize IMDb ID to standard format.
+    
+    Args:
+        value: IMDb ID value to normalize
+        
+    Returns:
+        str: Normalized IMDb ID (eg, "tt1234567") or None
+    """
+    if not value:
+        return None
+    s = str(value).strip()
+    m = re.search(r'(tt\d{6,9})', s, re.IGNORECASE)
+    return m.group(1) if m else None
+
+
+def imdb_item_normalize(item: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Convert IMDb API response item to normalized format.
+    
+    Args:
+        item: IMDb API response item dict
+        
+    Returns:
+        dict: Normalized item data
+    """
+    # item format from RapidAPI search
+    imdb_id = imdb_id_normalize((item.get('imdb_id') or item.get('imdbId') or item.get('id')) if isinstance(item, dict) else None)
+    title = ''
+    if isinstance(item, dict):
+        title = (item.get('primaryTitle') or item.get('originalTitle') or item.get('title') or '').strip()
+    # rating (0-10)
+    rating_val = None
+    if isinstance(item, dict):
+        rv = item.get('averageRating')
+        if rv not in (None, ''):
+            try:
+                rating_val = float(rv)
+            except (TypeError, ValueError):
+                rating_val = None
+    # image
+    image_url = ''
+    if isinstance(item, dict):
+        image_url = (item.get('primaryImage') or '').strip()
+        if not image_url:
+            thumbs = item.get('thumbnails') or []
+            if isinstance(thumbs, list) and thumbs:
+                image_url = (thumbs[0].get('url') or '').strip()
+    # year
+    year = None
+    if isinstance(item, dict):
+        rd = (item.get('releaseDate') or '')
+        if isinstance(rd, str) and len(rd) >= 4 and rd[:4].isdigit():
+            year = rd[:4]
+        elif item.get('startYear'):
+            year = str(item.get('startYear'))[:4]
+    return {
+        'id': None,
+        'imdb_id': imdb_id,
+        'tvdb_id': None,
+        'title': title,
+        'year': year,
+        'type': (item.get('type') or '').strip().lower() if isinstance(item, dict) else '',
+        'status': '',
+        'rating': (f"{rating_val:.1f}" if rating_val is not None else None),
+        'image_url': image_url,
+        'source': 'IMDb'
+    }
+
+
+# ===== Low-level IMDb API Integration =====
+
+def _rapidapi_key(explicit: Optional[str] = None) -> Optional[str]:
+    """
+    Resolve RapidAPI key from explicit argument or environment.
+    Checks IMDB_RAPIDAPI_KEY, RAPIDAPI_KEY, X_RAPIDAPI_KEY.
+    """
+    if explicit and str(explicit).strip():
+        return str(explicit).strip()
+    return (
+        os.getenv('IMDB_RAPIDAPI_KEY')
+        or os.getenv('RAPIDAPI_KEY')
+        or os.getenv('X_RAPIDAPI_KEY')
+    )
+
+
+def imdb_api_search_title(query: str,
+                          content_type: Optional[str] = None,
+                          genre: Optional[str] = None,
+                          rows: int = 25,
+                          sort_order: str = 'ASC',
+                          sort_field: str = 'id',
+                          api_key: Optional[str] = None,
+                          timeout: Optional[float] = None):
+    """
+    RapidAPI: Search movies/TV shows by title.
+
+    Returns list of result dicts (may be empty).
+    """
+    key = _rapidapi_key(api_key)
+    if not key:
+        raise ValueError("RapidAPI key not configured (set IMDB_RAPIDAPI_KEY or RAPIDAPI_KEY).")
+
+    url = "https://imdb236.p.rapidapi.com/api/imdb/search"
+    params = {
+        "primaryTitleAutocomplete": query,
+        "rows": str(rows),
+        "sortOrder": sort_order,
+        "sortField": sort_field
+    }
+    if content_type:
+        params["type"] = content_type
+    if genre:
+        params["genre"] = genre
+
+    headers = {
+        'X-RapidAPI-Host': 'imdb236.p.rapidapi.com',
+        'X-RapidAPI-Key': key
+    }
+    resp = requests.get(url, headers=headers, params=params, timeout=timeout or 10)
+    resp.raise_for_status()
+    body = resp.json()
+    results = body.get('results') or body.get('data') or []
+    return results if isinstance(results, list) else []
+
+
+def imdb_api_search_by_director_name(director_name: str,
+                                     content_type: Optional[str] = None,
+                                     genre: Optional[str] = None,
+                                     rows: int = 25,
+                                     sort_order: str = 'ASC',
+                                     sort_field: str = 'id',
+                                     api_key: Optional[str] = None,
+                                     timeout: Optional[float] = None):
+    """
+    RapidAPI: Search movies/TV shows by director name.
+    Uses the directors parameter if available, otherwise falls back to general search.
+
+    Returns list of result dicts (may be empty).
+    """
+    key = _rapidapi_key(api_key)
+    if not key:
+        raise ValueError("RapidAPI key not configured (set IMDB_RAPIDAPI_KEY or RAPIDAPI_KEY).")
+
+    url = "https://imdb236.p.rapidapi.com/api/imdb/search"
+    params = {
+        "directors": director_name,
+        "rows": str(rows),
+        "sortOrder": sort_order,
+        "sortField": sort_field
+    }
+    if content_type:
+        params["type"] = content_type
+    if genre:
+        params["genre"] = genre
+
+    headers = {
+        'X-RapidAPI-Host': 'imdb236.p.rapidapi.com',
+        'X-RapidAPI-Key': key
+    }
+    
+    try:
+        resp = requests.get(url, headers=headers, params=params, timeout=timeout or 10)
+        resp.raise_for_status()
+        body = resp.json()
+        results = body.get('results') or body.get('data') or []
+        return results if isinstance(results, list) else []
+    except Exception:
+        # Fallback to title search if director search fails
+        return imdb_api_search_title(director_name, content_type, genre, rows, sort_order, sort_field, api_key, timeout)
+
+
+def imdb_api_get_details(imdb_id: str,
+                         api_key: Optional[str] = None,
+                         timeout: Optional[float] = None):
+    """
+    RapidAPI: Get details for a specific IMDb ID.
+    Returns the raw JSON payload (dict).
+    
+    # Modified by glm-4.6 | 2025-10-22
+    """
+    imdb_id_norm = imdb_id_normalize(imdb_id)
+    if not imdb_id_norm:
+        raise ValueError("Invalid imdb_id")
+
+    endpoint = f"/api/imdb/{imdb_id_norm}"
+    params = {}
+    
+    response = imdb_provider.get(endpoint, params=params)
+    
+    if not response['success']:
+        raise ValueError(f"API request failed: {response['error']}")
+    
+    return response['data']
+
+
+def imdb_details_normalize(payload: dict) -> dict:
+    """
+    Normalize IMDb details payload (from RapidAPI) into a common structure.
+
+    Returns:
+        {
+        'imdb_id': 'tt1234567',
+        'title': 'Primary Title or Original',
+        'description': '...',
+        'release_date': 'YYYY-MM-DD' or None,
+        'is_adult': bool or None,
+        'content_rating': 'PG-13' or None,
+        'type': 'movie' | 'series' | None,
+        'average_rating_0_10': float or None,
+        'genres': [..] or None,
+        'spoken_languages': [..] or None,
+        'directors': [director_names..] or [],
+        'cast': [{'name': str, 'character': str or None}, ..] or [],
+        'poster': image_url or None
+        }
+    """
+    d = payload or {}
+    # Some APIs return nested 'data' or 'results'
+    if isinstance(d, dict) and 'data' in d and isinstance(d['data'], dict):
+        d = d['data']
+    if isinstance(d, dict) and 'results' in d and isinstance(d['results'], list) and d['results']:
+        d = d['results'][0]
+
+    def _get(*keys):
+        for k in keys:
+            if isinstance(d, dict) and k in d:
+                return d.get(k)
+        return None
+
+    imdb_id = imdb_id_normalize(_get('id', 'imdbId', 'imdb_id') or '')
+    primary_title = _get('primaryTitle')
+    original_title = _get('originalTitle')
+    title = (primary_title or original_title or '').strip() or None
+    description = (_get('description', 'plot') or '').strip() or None
+    release_date = (_get('releaseDate', 'datePublished') or '').strip() or None
+    content_rating = (_get('contentRating') or '').strip() or None
+    is_adult = _get('isAdult')
+    try:
+        if is_adult is not None:
+            is_adult = bool(is_adult)
+    except Exception:
+        is_adult = None
+    t_raw = (_get('type') or '').strip().lower()
+    if 'movie' in t_raw:
+        t_norm = 'movie'
+    elif 'series' in t_raw or 'show' in t_raw or t_raw == 'tv':
+        t_norm = 'series'
+    else:
+        t_norm = (t_raw or None)
+    avg = _get('averageRating')
+    try:
+        avg = float(avg) if avg is not None and avg != '' else None
+    except (TypeError, ValueError):
+        avg = None
+    genres = _get('genres') if isinstance(_get('genres'), list) else None
+    spoken = _get('spokenLanguages') if isinstance(_get('spokenLanguages'), list) else None
+    
+    # Directors extraction
+    directors = _get('directors') if isinstance(_get('directors'), list) else None
+    director_names = []
+    if directors:
+        for director in directors[:5]:  # Limit to first 5 directors
+            if isinstance(director, dict):
+                name = (director.get('fullName') or director.get('name') or '').strip()
+                if name:
+                    director_names.append(name)
+    
+    # Cast/Actors extraction - Sonnet 4.5 | 2025-10-03
+    cast = _get('cast') if isinstance(_get('cast'), list) else None
+    cast_members = []
+    if cast:
+        for actor in cast[:10]:  # Limit to first 10 cast members
+            if isinstance(actor, dict):
+                name = (actor.get('fullName') or actor.get('name') or '').strip()
+                character = (actor.get('characterName') or actor.get('character') or '').strip()
+                if name:
+                    cast_members.append({
+                        'name': name,
+                        'character': character if character else None
+                    })
+    
+    # Image/poster URL
+    poster = (_get('primaryImage', 'poster') or '').strip() or None
+
+    return {
+        'imdb_id': imdb_id,
+        'title': title,
+        'description': description,
+        'release_date': release_date,
+        'is_adult': is_adult,
+        'content_rating': content_rating,
+        'type': t_norm,
+        'average_rating_0_10': avg,
+        'genres': genres,
+        'spoken_languages': spoken,
+        'directors': director_names,
+        'cast': cast_members,  # Add cast to normalized response
+        'poster': poster
+    }
+
+
+# ===== IMDb Rating Scraping =====
+
+def _extract_rating_from_obj(obj) -> Optional[float]:
+    """
+    Extract rating from a JSON-LD object if present.
+    Looks for aggregateRating.ratingValue.
+    """
+    try:
+        if not isinstance(obj, dict):
+            return None
+        ar = obj.get('aggregateRating') or obj.get('AggregateRating') or {}
+        if isinstance(ar, dict):
+            rv = ar.get('ratingValue') or ar.get('rating') or ar.get('value')
+            if rv is not None:
+                try:
+                    return float(rv)
+                except (TypeError, ValueError):
+                    return None
+        ir = obj.get('itemReviewed') or {}
+        if isinstance(ir, dict):
+            ar = ir.get('aggregateRating') or {}
+            if isinstance(ar, dict):
+                rv = ar.get('ratingValue')
+                if rv is not None:
+                    try:
+                        return float(rv)
+                    except (TypeError, ValueError):
+                        return None
+    except Exception:
+        return None
+    return None
+
+
+def imdb_rating_scrape(imdb_id_or_url: str, timeout: Optional[float] = None) -> Optional[float]:
+    """
+    Fetch and scrape the IMDb rating for a given IMDb title id or URL.
+
+    Args:
+        imdb_id_or_url: IMDb title id like 'tt0903747' or a full IMDb URL containing the id.
+        timeout: Optional request timeout in seconds (default: 8).
+
+    Returns:
+        float rating value (eg, 8.7) if found, otherwise None.
+    """
+    imdb_id = imdb_id_normalize(imdb_id_or_url)
+    if not imdb_id:
+        return None
+
+    url = f'https://www.imdb.com/title/{imdb_id}/'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                      'AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/124.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+    }
+
+    try:
+        resp = requests.get(url, headers=headers, timeout=timeout or 8)
+        resp.raise_for_status()
+        html = resp.text
+    except requests.RequestException:
+        return None
+
+    # 1) Preferred: JSON-LD script tag(s)
+    try:
+        for m in re.finditer(r'<script type="application/ld\+json">(.+?)</script>', html, re.DOTALL | re.IGNORECASE):
+            payload = m.group(1)
+            try:
+                data = json.loads(payload)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(data, list):
+                for obj in data:
+                    val = _extract_rating_from_obj(obj)
+                    if val is not None:
+                        return val
+            else:
+                val = _extract_rating_from_obj(data)
+                if val is not None:
+                    return val
+    except Exception:
+        pass
+
+    # 2) Fallback: search for aggregateRating JSON fragment
+    try:
+        m = re.search(r'"aggregateRating"\s*:\s*{[^}]*"ratingValue"\s*:\s*"?(?P<val>\d+(\.\d+)?)', html, re.IGNORECASE | re.DOTALL)
+        if m:
+            return float(m.group('val'))
+    except Exception:
+        pass
+
+    try:
+        m = re.search(r'"ratingValue"\s*:\s*"?(?P<val>\d+(\.\d+)?)', html)
+        if m:
+            return float(m.group('val'))
+    except Exception:
+        pass
+
+    # 3) UI-based fallback (fragile; may change)
+    try:
+        m = re.search(r'data-testid="hero-rating-bar__aggregate-rating__score"[^>]*>\s*<span[^>]*>\s*(\d+(\.\d+)?)\s*</span>', html, re.IGNORECASE)
+        if m:
+            return float(m.group(1))
+    except Exception:
+        pass
+
+    return None
+
+
+# ===== Fallback Title Search =====
+
+def imdb_title_search_fallback(query: str, year: Optional[int] = None, timeout: Optional[float] = None) -> Optional[str]:
+    """
+    Best-effort IMDb title search without API access.
+    Returns a title id like 'tt0112682' for the given query.
+
+    Strategy:
+      1) Try the public autocomplete JSON endpoint (v2.sg.media-imdb.com/suggestion).
+      2) Fallback to scraping the /find results page.
+    """
+    try:
+        if not query or not str(query).strip():
+            return None
+        q0 = str(query).strip()
+
+        def _remove_diacritics(s: str) -> str:
+            try:
+                import unicodedata
+                return ''.join(c for c in unicodedata.normalize('NFKD', s) if not unicodedata.combining(c))
+            except Exception:
+                return s
+
+        def _strip_parens(s: str) -> str:
+            try:
+                return re.sub(r'\s*\([^)]*\)', '', s).strip()
+            except Exception:
+                return s
+
+        def _split_aka_and_delims(s: str):
+            try:
+                parts = re.split(r'\s*(?:aka|a\.?k\.?a\.?)\s*', s, flags=re.I)
+            except Exception:
+                parts = [s]
+            pieces = []
+            for p in parts:
+                for q in re.split(r'[:\-\–\—\|/\\]', p):
+                    q = (q or '').strip()
+                    if len(q) >= 2:
+                        pieces.append(q)
+            return pieces
+
+        def _uniq(seq):
+            seen = set()
+            out = []
+            for s in seq:
+                k = s.strip().lower()
+                if k and k not in seen:
+                    out.append(s)
+                    seen.add(k)
+            return out
+
+        def _norm(s: str) -> str:
+            s2 = _remove_diacritics(s or '')
+            s2 = re.sub(r'\s+', ' ', s2).strip().lower()
+            return s2
+
+        # Build candidate queries
+        queries = [q0]
+        queries.extend(_split_aka_and_delims(q0))
+        queries.append(_strip_parens(q0))
+        q_no_diac = _remove_diacritics(q0)
+        if q_no_diac and q_no_diac.lower() != q0.lower():
+            queries.append(q_no_diac)
+            queries.extend(_split_aka_and_delims(q_no_diac))
+            queries.append(_strip_parens(q_no_diac))
+        queries = _uniq([q for q in queries if q])
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+        }
+
+        # Try suggestions (fast, JSON)
+        for qi, q in enumerate(queries[:6]):
+            prefix = q[0].lower() if q else 't'
+            url = f'https://v2.sg.media-imdb.com/suggestion/{prefix}/{quote_plus(q)}.json'
+            try:
+                r = requests.get(url, headers=headers, timeout=timeout or 8)
+                if r.status_code == 200:
+                    body = r.json()
+                    items = body.get('d') or []
+                    best = None
+                    best_key = (-1, -1, -1, -999999)  # (year_match, exact, starts+type, -index)
+                    q_norm = _norm(q)
+                    for idx, it in enumerate(items):
+                        try:
+                            tid = it.get('id') or it.get('tconst') or ''
+                            if not re.match(r'^tt\d{6,9}$', str(tid)):
+                                continue
+                            title = it.get('l') or it.get('title') or ''
+                            yn = it.get('y') or it.get('year')
+                            try:
+                                yn = int(yn) if yn is not None else None
+                            except Exception:
+                                yn = None
+                            qtype = (it.get('qid') or it.get('q') or '').lower()
+                            t_norm = _norm(title)
+
+                            # Token-based similarity (ignore common stopwords)
+                            stop = {'the','a','an','of','and','or','la','le','les','de','des','du','el','los','las','da','di','del','der','die'}
+                            def _toks(s):
+                                try:
+                                    return [w for w in re.split(r'[^a-z0-9]+', s) if w and w not in stop]
+                                except Exception:
+                                    return []
+                            qt = set(_toks(q_norm))
+                            tt = set(_toks(t_norm))
+                            inter = len(qt & tt)
+                            uni = len(qt | tt) or 1
+                            jacc = int((inter * 100) / uni)
+
+                            year_match = 1 if (year and yn == year) else 0
+                            exact = 1 if (t_norm == q_norm) else 0
+                            contain = 1 if (q_norm in t_norm or t_norm in q_norm) else 0
+                            starts = 1 if (t_norm.startswith(q_norm) or q_norm.startswith(t_norm)) else 0
+
+                            # Prefer feature films over series/episodes/games
+                            qtype_norm = qtype.replace(' ', '').replace('-', '')
+                            if qtype_norm in ('movie','feature','tvmovie','tvspecial','documentary'):
+                                ts = 3
+                            elif qtype_norm in ('video','short'):
+                                ts = 2
+                            elif qtype_norm in ('tvseries','tvminiseries','miniseries'):
+                                ts = 1
+                            elif 'episode' in qtype_norm or 'tvepisode' in qtype_norm or 'game' in qtype_norm:
+                                ts = 0
+                            else:
+                                ts = 1
+
+                            key = (year_match, exact, contain, starts, ts, jacc, -idx)
+                            if key > best_key:
+                                best_key = key
+                                best = tid
+                        except Exception:
+                            continue
+                    if best:
+                        return best
+            except requests.RequestException:
+                pass
+
+        # Fallback: HTML search page (rank results by year/type/title similarity)
+        for q in queries[:6]:
+            try:
+                url = f'https://www.imdb.com/find/?q={quote_plus(q)}&s=tt&ttype=ft'
+                r = requests.get(url, headers=headers, timeout=timeout or 8)
+                if r.status_code != 200:
+                    continue
+                html = r.text
+                q_norm = _norm(q)
+
+                # Tokenizer and stopwords (mirror suggestion ranking)
+                stop = {'the','a','an','of','and','or','la','le','les','de','des','du','el','los','las','da','di','del','der','die'}
+                def _toks(s):
+                    try:
+                        return [w for w in re.split(r'[^a-z0-9]+', s) if w and w not in stop]
+                    except Exception:
+                        return []
+
+                best = None
+                best_key = (-1, -1, -1, -1, -1, -1)
+
+                # Parse structured results table
+                for m in re.finditer(r'<td class="result_text">.*?<a href="/title/(tt\d{6,9})/[^"]*">([^<]+)</a>\s*\(([^)]*)\)', html, re.IGNORECASE | re.DOTALL):
+                    try:
+                        tid = m.group(1)
+                        title = (m.group(2) or '').strip()
+                        meta = (m.group(3) or '').strip()  # contains year and type, e.g. "1995" or "TV Series 2019–"
+                        t_norm = _norm(title)
+
+                        # Year parse
+                        y_match = re.search(r'(\d{4})', meta)
+                        yn = int(y_match.group(1)) if y_match else None
+
+                        # Type score from meta text
+                        qtype_norm = re.sub(r'[^a-z]', '', meta.lower())
+                        if any(k in qtype_norm for k in ('movie','feature','tvmovie','tvspecial','documentary','film')):
+                            ts = 3
+                        elif any(k in qtype_norm for k in ('video','short')):
+                            ts = 2
+                        elif any(k in qtype_norm for k in ('tvseries','miniseries','series')):
+                            ts = 1
+                        elif any(k in qtype_norm for k in ('episode','tvepisode','game','videogame')):
+                            ts = 0
+                        else:
+                            ts = 1
+
+                        # Similarity metrics
+                        qt = set(_toks(q_norm))
+                        tt = set(_toks(t_norm))
+                        inter = len(qt & tt)
+                        uni = len(qt | tt) or 1
+                        jacc = int((inter * 100) / uni)
+
+                        year_match = 1 if (year and yn == year) else 0
+                        exact = 1 if (t_norm == q_norm) else 0
+                        contain = 1 if (q_norm in t_norm or t_norm in q_norm) else 0
+                        starts = 1 if (t_norm.startswith(q_norm) or q_norm.startswith(t_norm)) else 0
+
+                        key = (year_match, exact, contain, starts, ts, jacc)
+                        if key > best_key:
+                            best_key = key
+                            best = tid
+                    except Exception:
+                        continue
+
+                if best:
+                    return best
+
+                # Last resort: first title id on page
+                m2 = re.search(r'/title/(tt\d{6,9})/', html, re.IGNORECASE)
+                if m2:
+                    return m2.group(1)
+            except requests.RequestException:
+                continue
+        return None
+    except Exception:
+        return None
+
+
+# ===== High-level Core Interface Functions =====
+
+def imdb_details_fetch_core(media_obj: Optional[Any] = None, imdb_id: Optional[str] = None, timeout: Optional[float] = None) -> Tuple[Optional[str], Dict[str, Any], Optional[float]]:
+    """
+    Fetch IMDb details for a media object or direct IMDb ID.
+    
+    Args:
+        media_obj: Media object to fetch data for (optional)
+        imdb_id: Direct IMDb ID to fetch (optional)
+        timeout: Request timeout in seconds
+        
+    Returns:
+        tuple: (resolved_imdb_id, normalized_data, rating_100)
+    """
+    try:
+        # Resolve IMDb id
+        resolved_id = None
+        if imdb_id:
+            v = (imdb_id or '').strip()
+            if v and re.match(r'^tt\d{6,9}$', v):
+                resolved_id = v
+        if not resolved_id and media_obj is not None:
+            # 1) From media.imdb_id
+            try:
+                raw = (getattr(media_obj, 'imdb_id', None) or '').strip()
+                if raw and re.match(r'^tt\d{6,9}$', raw):
+                    resolved_id = raw
+            except Exception:
+                resolved_id = None
+            # 2) From media.media_metadata.remoteIds or alt keys
+            if not resolved_id:
+                try:
+                    meta = getattr(media_obj, 'media_metadata', None) or {}
+                    if isinstance(meta, dict):
+                        remote_ids = meta.get('remoteIds') or []
+                        if isinstance(remote_ids, list):
+                            for remote in remote_ids:
+                                try:
+                                    if isinstance(remote, dict) and (remote.get('sourceName') == 'IMDB' or remote.get('type') == 2):
+                                        rid = str(remote.get('id') or '').strip()
+                                        if rid and re.match(r'^tt\d{6,9}$', rid):
+                                            resolved_id = rid
+                                            break
+                                except Exception:
+                                    continue
+                        if not resolved_id:
+                            for k in ('imdb_id', 'imdbId', 'imdb'):
+                                rid = str(meta.get(k) or '').strip()
+                                if rid and re.match(r'^tt\d{6,9}$', rid):
+                                    resolved_id = rid
+                                    break
+                except Exception:
+                    pass
+            # 3) Fallback search by title
+            if not resolved_id:
+                try:
+                    title = (getattr(media_obj, 'title', None) or getattr(media_obj, 'name', None) or '').strip()
+                    content_type = None
+                    try:
+                        mt = getattr(media_obj, 'media_type', None)
+                        mt_code = (getattr(mt, 'code', None) or getattr(mt, 'name', None) or '').strip().lower()
+                        if 'movie' in mt_code:
+                            content_type = 'movie'
+                        elif 'series' in mt_code or 'show' in mt_code:
+                            content_type = 'series'
+                    except Exception:
+                        content_type = None
+                    candidates = []
+                    if title:
+                        try:
+                            candidates = imdb_api_search_title(title, content_type=content_type, rows=25, sort_order='ASC', sort_field='id', timeout=timeout or 10)
+                        except Exception:
+                            candidates = []
+                    if candidates:
+                        # prefer year match
+                        year = None
+                        try:
+                            if getattr(media_obj, 'release_date', None):
+                                year = int(media_obj.release_date.year)
+                        except Exception:
+                            year = None
+                        picked = None
+                        if year:
+                            for c in candidates:
+                                try:
+                                    rd = (c.get('releaseDate') or '')[:4]
+                                    if rd.isdigit() and int(rd) == year:
+                                        picked = c
+                                        break
+                                except Exception:
+                                    continue
+                        if not picked:
+                            picked = candidates[0]
+                        resolved_id = str(picked.get('id') or '').strip() if isinstance(picked, dict) else None
+                except Exception:
+                    pass
+
+        # Fetch details and normalize
+        data_norm = {}
+        if resolved_id:
+            try:
+                payload = imdb_api_get_details(resolved_id, timeout=timeout or 10)
+                data_norm = imdb_details_normalize(payload) or {}
+            except Exception:
+                data_norm = {'imdb_id': resolved_id}
+
+        # Compute 0-100 rating
+        rating_100 = None
+        try:
+            avg = data_norm.get('average_rating_0_10')
+            if avg is not None:
+                rating_100 = float(avg) * 10.0
+                if rating_100 < 0.0:
+                    rating_100 = 0.0
+                if rating_100 > 100.0:
+                    rating_100 = 100.0
+        except Exception:
+            rating_100 = None
+
+        return (resolved_id or data_norm.get('imdb_id'), data_norm, rating_100)
+    except Exception:
+        return (imdb_id, {}, None)
+
+
+def imdb_search_core(query: str, year: Optional[int] = None, page: int = 1) -> dict:
+    """
+    Search IMDb for titles matching the query.
+    
+    Validates inputs and delegates to existing search functionality.
+    No Flask context required.
+    
+    Args:
+        query: Search query string
+        year: Optional release year filter
+        page: Results page number (1-based, currently unused but reserved)
+        
+    Returns:
+        dict: Search results with pagination info
+        
+    Raises:
+        ValueError: If query is invalid or search fails
+    """
+    if not query or not isinstance(query, str):
+        raise ValueError("query must be a non-empty string")
+    
+    query = query.strip()
+    if len(query) < 2:
+        raise ValueError("query must be at least 2 characters long")
+    
+    if year is not None and (not isinstance(year, int) or year < 1800 or year > 2100):
+        raise ValueError("year must be a valid integer between 1800 and 2100")
+    
+    if not isinstance(page, int) or page < 1:
+        raise ValueError("page must be a positive integer")
+    
+    try:
+        # Note: Current implementation doesn't use year filter or pagination
+        # These are reserved for future enhancement
+        results = imdb_search_for_media_core(
+            search_term=query,
+            genre_name=None,
+            timeout=10
+        )
+        
+        return {
+            'success': True,
+            'query': query,
+            'year': year,
+            'page': page,
+            'results': results,
+            'total_results': len(results)
+        }
+        
+    except Exception as e:
+        raise ValueError(f"IMDb search failed for query '{query}': {str(e)}")
+
+
+def imdb_search_for_media_core(search_term: str, genre_name: Optional[str] = None,
+                              timeout: Optional[float] = None) -> List[Dict[str, Any]]:
+    """
+    Generic IMDB search function that can be used by any user type.
+    
+    Args:
+        search_term (str): Search query string
+        genre_name (str, optional): Genre name for filtering
+        timeout (float, optional): Request timeout
+        
+    Returns:
+        list: List of normalized IMDb search results
+    """
+    imdb_results = []
+    try:
+        if search_term or genre_name:
+            query_results = []
+
+            try:
+                # Search by title
+                raw = imdb_api_search_title(
+                    search_term or '',
+                    content_type=None,
+                    genre=genre_name,
+                    rows=(200 if genre_name else 50),
+                    sort_order='ASC',
+                    sort_field='id',
+                    timeout=timeout or 10
+                )
+
+                # Also search by director name when search term provided (but not when filtering by genre)
+                director_results = []
+                if search_term and not genre_name:  # Only do director search for pure text search
+                    try:
+                        director_movies = imdb_api_search_by_director_name(
+                            search_term,
+                            rows=15,
+                            timeout=timeout or 10
+                        )
+                        
+                        if director_movies:
+                            director_results = director_movies
+                    except Exception:
+                        pass
+
+                # Combine title search and director search results
+                combined_raw = []
+                
+                # Process title search results
+                if isinstance(raw, dict):
+                    raw_list = raw.get('results') or raw.get('data') or []
+                elif isinstance(raw, list):
+                    raw_list = raw
+                else:
+                    raw_list = []
+                combined_raw.extend(raw_list)
+                
+                # Process director search results
+                if director_results:
+                    combined_raw.extend(director_results)
+
+                # Remove duplicates based on IMDB ID
+                seen_imdb_ids = set()
+                deduplicated_raw = []
+                for item in combined_raw:
+                    if not isinstance(item, dict):
+                        continue
+                    imdb_id = item.get('id') or item.get('imdbId') or item.get('imdb_id') or ''
+                    if imdb_id and imdb_id not in seen_imdb_ids:
+                        seen_imdb_ids.add(imdb_id)
+                        deduplicated_raw.append(item)
+                    elif not imdb_id:  # Include items without IMDB ID
+                        deduplicated_raw.append(item)
+
+                for item in deduplicated_raw:
+                    if not isinstance(item, dict):
+                        continue
+
+                    imdb_id_val = str(item.get('id') or item.get('imdbId') or item.get('imdb_id') or '').strip()
+                    title_val = (item.get('primaryTitle') or item.get('originalTitle') or item.get('title') or '').strip()
+                    desc_val = (item.get('description') or '').strip()
+                    type_val = (item.get('type') or '').strip().lower()
+
+                    release_date = (item.get('releaseDate') or '').strip()
+                    start_year = item.get('startYear')
+                    year_val = release_date[:4] if release_date else (str(start_year)[:4] if start_year else None)
+
+                    # Director extraction
+                    director_val = ''
+                    try:
+                        directors = item.get('directors') or []
+                        if isinstance(directors, list) and directors:
+                            # Extract director names from the list
+                            director_names = []
+                            for d in directors[:3]:  # Limit to first 3 directors
+                                if isinstance(d, dict):
+                                    name = (d.get('name') or d.get('primaryName') or '').strip()
+                                    if name:
+                                        director_names.append(name)
+                                elif isinstance(d, str):
+                                    name = d.strip()
+                                    if name:
+                                        director_names.append(name)
+                            if director_names:
+                                director_val = ', '.join(director_names)
+                    except Exception:
+                        director_val = ''
+
+                    # Robust rating extraction (IMDb averageRating 0..10)
+                    rating_val = None
+                    rv = item.get('averageRating')
+                    if rv not in (None, ''):
+                        try:
+                            rating_val = float(rv)
+                        except (TypeError, ValueError):
+                            rating_val = None
+                    rating_display = f"{rating_val:.1f}" if rating_val is not None else None
+                    rating_sort = rating_val if rating_val is not None else 9999
+
+                    # Image
+                    image_url = ''
+                    try:
+                        image_url = (item.get('primaryImage') or '').strip()
+                        if not image_url:
+                            thumbs = item.get('thumbnails') or []
+                            if isinstance(thumbs, list) and thumbs:
+                                image_url = (thumbs[0].get('url') or '').strip()
+                    except Exception:
+                        image_url = ''
+
+                    # Release display/sort
+                    released_display = release_date[:10] if release_date else (year_val or 'N/A')
+                    released_sort = release_date[:10] if release_date else (f"{year_val}-01-01" if year_val else '9999-12-31')
+
+                    normalized_item = {
+                        'imdb_id': imdb_id_val,
+                        'title': title_val,
+                        'year': year_val,
+                        'type': type_val,
+                        'director': director_val,
+                        'description': desc_val,
+                        'overview': desc_val,
+                        'status': '',
+                        'first_air_time': release_date,
+                        'released': released_display,
+                        'released_sort': released_sort,
+                        'rating': rating_display,
+                        'rating_sort': rating_sort,
+                        'network': '',
+                        'image_url': image_url
+                    }
+                    query_results.append(normalized_item)
+            except Exception:
+                pass
+
+            # The IMDb call above already accounts for optional genre filter
+            imdb_results = list(query_results)
+    except Exception:
+        imdb_results = []
+
+    return imdb_results
+
+
+def imdb_rating_core(imdb_id: str) -> dict:
+    """
+    Retrieve IMDb rating for a specific title.
+    
+    Validates input and delegates to existing rating functionality.
+    No Flask context dependencies.
+    
+    Args:
+        imdb_id: IMDb identifier (eg, "tt1234567")
+        
+    Returns:
+        dict: Rating information or error details
+        
+    Raises:
+        ValueError: If imdb_id is invalid or rating fetch fails
+    """
+    if not imdb_id or not isinstance(imdb_id, str):
+        raise ValueError("imdb_id must be a non-empty string")
+    
+    imdb_id = imdb_id.strip()
+    if not re.match(r'^tt\d{6,9}$', imdb_id):
+        raise ValueError(f"Invalid IMDb ID format: {imdb_id}")
+    
+    try:
+        rating = imdb_rating_scrape(imdb_id, timeout=6)
+        
+        return {
+            'success': True,
+            'imdb_id': imdb_id,
+            'rating': rating,
+            'rating_0_10': rating,
+            'rating_0_100': rating * 10.0 if rating is not None else None
+        }
+        
+    except Exception as e:
+        raise ValueError(f"Failed to fetch IMDb rating for {imdb_id}: {str(e)}")
+
+
+def imdb_import_core(imdb_id: str) -> dict:
+    """
+    Prepare IMDb data for import into the system.
+    
+    This is a stateless preparation step that fetches and normalizes IMDb data.
+    Does not perform actual database operations - that's handled by Flask-aware layers.
+    
+    Args:
+        imdb_id: IMDb identifier (eg, "tt1234567")
+        
+    Returns:
+        dict: Normalized import-ready data
+        
+    Raises:
+        ValueError: If imdb_id is invalid or data preparation fails
+    """
+    if not imdb_id or not isinstance(imdb_id, str):
+        raise ValueError("imdb_id must be a non-empty string")
+    
+    imdb_id = imdb_id.strip()
+    if not re.match(r'^tt\d{6,9}$', imdb_id):
+        raise ValueError(f"Invalid IMDb ID format: {imdb_id}")
+    
+    try:
+        # Fetch comprehensive details for import preparation
+        resolved_id, data_norm, rating_100 = imdb_details_fetch_core(
+            media_obj=None,
+            imdb_id=imdb_id,
+            timeout=10
+        )
+        
+        if not resolved_id and not data_norm:
+            raise ValueError(f"No importable data found for IMDb ID: {imdb_id}")
+        
+        # Prepare import-ready structure
+        import_data = {
+            'imdb_id': resolved_id or imdb_id,
+            'title': data_norm.get('title', ''),
+            'description': data_norm.get('description', ''),
+            'overview': data_norm.get('description', ''),
+            'release_date': data_norm.get('release_date', ''),
+            'content_type': data_norm.get('type', 'movie').lower(),
+            'genres': data_norm.get('genres', []),
+            'spoken_languages': data_norm.get('spoken_languages', []),
+            'poster_url': data_norm.get('poster', ''),
+            'is_adult': bool(data_norm.get('is_adult', False)),
+            'content_rating': data_norm.get('content_rating', ''),
+            'rating_0_10': data_norm.get('average_rating_0_10'),
+            'rating_0_100': rating_100,
+            'raw_metadata': data_norm
+        }
+        
+        return {
+            'success': True,
+            'imdb_id': resolved_id or imdb_id,
+            'import_data': import_data,
+            'ready_for_import': True
+        }
+        
+    except Exception as e:
+        raise ValueError(f"Failed to prepare IMDb import data for {imdb_id}: {str(e)}")

@@ -1,0 +1,64 @@
+# Created by Gemini 2.5 Pro | 2025-10-23
+import os
+import re
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+def get_csrf_token(html_content):
+    """Extracts CSRF token from HTML content."""
+    match = re.search(r'name="csrf_token" type="hidden" value="([^"]+)"', html_content)
+    if match:
+        return match.group(1)
+    return None
+
+def test_admin_upload_image(client):
+    """
+    Tests the admin media upload functionality.
+    """
+    # 1. Login Logic
+    # Get CSRF token from login page
+    login_response = client.get('/auth/login')
+    assert login_response.status_code == 200
+    csrf_token_login = get_csrf_token(login_response.data.decode('utf-8'))
+    assert csrf_token_login is not None
+
+    # Log in as admin
+    admin_email = os.environ.get('ADMIN_EMAIL_45')
+    admin_password = os.environ.get('ADMIN_PASSWORD_45')
+    
+    login_post_response = client.post('/auth/login', data={
+        'email': admin_email,
+        'password': admin_password,
+        'csrf_token': csrf_token_login
+    }, follow_redirects=False)  # Changed to False
+    assert login_post_response.status_code == 302  # Assert redirect
+
+    # 2. Upload Logic
+    # Get CSRF token from upload page
+    upload_page_response = client.get('/admin/media/upload')
+    assert upload_page_response.status_code == 200
+    csrf_token_upload = get_csrf_token(upload_page_response.data.decode('utf-8'))
+    assert csrf_token_upload is not None
+
+    # Prepare file for upload
+    test_image_path = 'temp/test_image.png'
+    with open(test_image_path, 'rb') as img:
+        data = {
+            'csrf_token': csrf_token_upload,
+            'owner_id': '45',
+            'media_type_id': '1',
+            'file': (img, 'test_image.png')
+        }
+        
+        # Send POST request to upload
+        upload_response = client.post(
+            '/admin/media/upload',
+            content_type='multipart/form-data',
+            data=data,
+            follow_redirects=False # We want to check the 302 status
+        )
+
+    # 3. Assertion
+    assert upload_response.status_code == 302

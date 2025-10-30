@@ -1,0 +1,90 @@
+import os
+import re
+import requests
+from dotenv import load_dotenv
+
+# Created by GLM-4.6 | 2025-10-23
+
+def get_csrf_token(html_content):
+    """Extract CSRF token from HTML content"""
+    match = re.search(r'name=["\']csrf_token["\'] value=["\']([^"\']+)["\']', html_content)
+    if match:
+        return match.group(1)
+    return None
+
+def test_admin_upload():
+    """Test admin media upload functionality"""
+    # Load environment variables
+    load_dotenv()
+    
+    # Get admin credentials from .env
+    admin_email = os.getenv('USERS_01_EMAIL')
+    admin_password = os.getenv('USERS_01_PASSWORD')
+    admin_id = os.getenv('USERS_01_ID')
+    
+    if not all([admin_email, admin_password, admin_id]):
+        print("ERROR: Admin credentials not found in .env file")
+        return False
+    
+    # Create a session
+    session = requests.Session()
+    
+    # Login to establish session
+    login_url = "http://localhost:5000/auth/login"
+    login_data = {
+        'email': admin_email,
+        'password': admin_password
+    }
+    
+    try:
+        response = session.post(login_url, data=login_data)
+        if response.status_code != 200:
+            print(f"ERROR: Login failed with status code {response.status_code}")
+            return False
+        
+        # Get CSRF token from upload page
+        upload_page_url = "http://localhost:5000/admin/media/upload"
+        response = session.get(upload_page_url)
+        
+        if response.status_code != 200:
+            print(f"ERROR: Failed to get upload page with status code {response.status_code}")
+            return False
+        
+        csrf_token = get_csrf_token(response.text)
+        if not csrf_token:
+            print("ERROR: Could not extract CSRF token from upload page")
+            return False
+        
+        # Prepare file payload
+        file_path = "temp/test_image.png"
+        if not os.path.exists(file_path):
+            print(f"ERROR: Test file {file_path} not found")
+            return False
+        
+        # Open file in binary mode
+        with open(file_path, 'rb') as f:
+            files = {'file': (os.path.basename(file_path), f, 'image/png')}
+            data = {
+                'csrf_token': csrf_token,
+                'owner_id': admin_id,
+                'media_type_id': '1'  # Image
+            }
+            
+            # Submit the form
+            upload_response = session.post("http://localhost:5000/admin/media/upload", files=files, data=data)
+        
+        # Check result - successful upload should redirect (status 302)
+        if upload_response.status_code in [200, 302]:
+            print("Admin upload test SUCCEEDED")
+            return True
+        else:
+            print(f"Admin upload test FAILED with status code {upload_response.status_code}")
+            print(f"Response content: {upload_response.text[:500]}")  # Print first 500 chars
+            return False
+            
+    except Exception as e:
+        print(f"ERROR: Exception occurred during test - {str(e)}")
+        return False
+
+if __name__ == "__main__":
+    test_admin_upload()

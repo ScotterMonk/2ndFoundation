@@ -1,0 +1,238 @@
+"""
+Core utility functions for TMDB operations.
+
+This module contains generic TMDB utility functions that can be used by both
+admin and regular user functionality. Functions here should not depend on
+Flask context, database operations, or user authentication.
+"""
+
+import requests
+import json
+from urllib.parse import quote
+
+
+def _safe_int(val):
+    """
+    Safely convert value to integer.
+    
+    Args:
+        val: Value to convert
+        
+    Returns:
+        int or None: Converted integer or None if conversion fails
+    """
+    try:
+        if val is None or val == '':
+            return None
+        return int(val)
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_float(val):
+    """
+    Safely convert value to float.
+    
+    Args:
+        val: Value to convert
+        
+    Returns:
+        float or None: Converted float or None if conversion fails
+    """
+    try:
+        if val is None or val == '':
+            return None
+        return float(val)
+    except (TypeError, ValueError):
+        return None
+
+
+def to_tmdb_item(item, media_type='movie'):
+    """
+    Convert TMDB API response item to normalized format.
+    
+    Args:
+        item: TMDB API response item dict
+        media_type: Either 'movie' or 'tv' to help with field mapping
+        
+    Returns:
+        dict: Normalized item data
+    """
+    # Get ID
+    tmdb_id = _safe_int(item.get('id'))
+    
+    # Get title (movies use 'title', TV shows use 'name')
+    if media_type.lower() == 'tv':
+        title = (item.get('name') or item.get('title') or '').strip()
+        original_title = (item.get('original_name') or item.get('original_title') or '').strip()
+        release_date = item.get('first_air_date')
+    else:
+        title = (item.get('title') or item.get('name') or '').strip()
+        original_title = (item.get('original_title') or item.get('original_name') or '').strip()
+        release_date = item.get('release_date')
+    
+    # Extract year from release date
+    year = None
+    if release_date:
+        try:
+            year_str = str(release_date).split('-')[0]
+            if year_str.isdigit():
+                year = year_str
+        except:
+            pass
+    
+    # Get popularity rating
+    popularity = _safe_float(item.get('popularity'))
+    
+    # Get other common fields
+    overview = (item.get('overview') or '').strip()
+    poster_path = (item.get('poster_path') or '').strip()
+    backdrop_path = (item.get('backdrop_path') or '').strip()
+    vote_average = _safe_float(item.get('vote_average'))
+    vote_count = _safe_int(item.get('vote_count'))
+    adult = item.get('adult', False)
+    original_language = (item.get('original_language') or '').strip()
+
+    return {
+        'id': None,  # Internal ID, not TMDB ID
+        'tmdb_id': tmdb_id,
+        'imdb_id': None,  # TMDB doesn't always include IMDB ID in basic results
+        'title': title,
+        'original_title': original_title,
+        'year': year,
+        'type': media_type.lower(),
+        'popularity': popularity,
+        'overview': overview,
+        'poster_path': poster_path,
+        'backdrop_path': backdrop_path,
+        'vote_average': vote_average,
+        'vote_count': vote_count,
+        'adult': adult,
+        'original_language': original_language,
+        'release_date': release_date,
+        'source': 'TMDB'
+    }
+
+
+def search_tmdb_core(query, media_type='movie', token=None, base_url=None):
+    """
+    Core function to search TMDB for media items.
+    
+    Args:
+        query (str): The search query (movie/TV show title)
+        media_type (str): Either 'movie' or 'tv' for TV shows
+        token (str): TMDB API token
+        base_url (str): TMDB API base URL
+        
+    Returns:
+        dict: Result containing success status and search results
+    """
+    try:
+        if not token or not base_url:
+            return {
+                'success': False,
+                'error': 'TMDB API credentials not provided'
+            }
+
+        # URL encode the query
+        query_encoded = quote(query)
+        
+        # Construct search URL based on media type
+        if media_type.lower() == 'tv':
+            search_url = f"{base_url}/search/tv?query={query_encoded}&include_adult=true&language=en-US&page=1"
+        else:
+            search_url = f"{base_url}/search/movie?query={query_encoded}&include_adult=true&language=en-US&page=1"
+
+        # Set headers for API request
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {token}"
+        }
+
+        # Make API request
+        response = requests.get(search_url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        # Process results
+        results = []
+        if 'results' in data and data['results']:
+            for item in data['results'][:10]:  # Limit to top 10 results
+                processed_item = to_tmdb_item(item, media_type)
+                if processed_item['tmdb_id']:  # Only include items with valid IDs
+                    results.append(processed_item)
+
+        return {
+            'success': True,
+            'results': results
+        }
+
+    except requests.RequestException as e:
+        return {
+            'success': False,
+            'error': f'TMDB API request failed: {str(e)}'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+def fetch_tmdb_details_core(tmdb_id, media_type='movie', token=None, base_url=None):
+    """
+    Core function to fetch detailed TMDB information.
+    
+    Args:
+        tmdb_id (int): The TMDB ID
+        media_type (str): Either 'movie' or 'tv'
+        token (str): TMDB API token
+        base_url (str): TMDB API base URL
+        
+    Returns:
+        dict: Result containing success status and fetched details
+    """
+    try:
+        if not token or not base_url:
+            return {
+                'success': False,
+                'error': 'TMDB API credentials not provided'
+            }
+
+        # Construct details URL based on media type
+        if media_type.lower() == 'tv':
+            details_url = f"{base_url}/tv/{tmdb_id}?language=en-US"
+        else:
+            details_url = f"{base_url}/movie/{tmdb_id}?language=en-US"
+
+        # Set headers for API request
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {token}"
+        }
+
+        # Make API request
+        response = requests.get(details_url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        # Process the detailed information
+        processed_details = to_tmdb_item(data, media_type)
+
+        return {
+            'success': True,
+            'details': processed_details
+        }
+
+    except requests.RequestException as e:
+        return {
+            'success': False,
+            'error': f'TMDB API request failed: {str(e)}'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }

@@ -1,0 +1,374 @@
+# Created by Claude Sonnet 4.5 | 2025-10-24
+"""
+Comprehensive unit tests for utils/user_query_core.py module.
+Tests build_user_search_query and prepare_user_list_data functions.
+"""
+import pytest
+from sqlalchemy.orm import Query
+from app import create_app, db
+from models.models_user import User, UserType
+from utils.user_query_core import build_user_search_query, prepare_user_list_data
+from werkzeug.security import generate_password_hash
+
+@pytest.fixture(scope='function')
+def app():
+    """Create and configure a new app instance for each test."""
+    app = create_app('testing')
+    with app.app_context():
+        db.create_all()
+        yield app
+        db.session.remove()
+        db.drop_all()
+
+@pytest.fixture(scope='function')
+def db_session(app):
+    """Provide a database session for tests."""
+    with app.app_context():
+        yield db.session
+
+@pytest.fixture(scope='function')
+def user_types(db_session):
+    """Create user types for testing."""
+    standard_type = UserType(
+        code='standard',
+        name='Standard User',
+        description='Standard user account'
+    )
+    reseller_type = UserType(
+        code='reseller',
+        name='Reseller',
+        description='Reseller account'
+    )
+    admin_type = UserType(
+        code='admin',
+        name='Administrator',
+        description='Admin account'
+    )
+    db_session.add_all([standard_type, reseller_type, admin_type])
+    db_session.commit()
+    return {
+        'standard': standard_type,
+        'reseller': reseller_type,
+        'admin': admin_type
+    }
+
+@pytest.fixture(scope='function')
+def sample_users(db_session, user_types):
+    """Create sample users for testing."""
+    users = []
+    # Active standard users
+    users.append(User(
+        username='john_doe',
+        email='john@example.com',
+        pw_hashed=generate_password_hash('password123'),
+        users_type_id=user_types['standard'].id,
+        is_active=True,
+        is_verified_email=True
+    ))
+    users.append(User(
+        username='jane_smith',
+        email='jane@example.com',
+        pw_hashed=generate_password_hash('password123'),
+        users_type_id=user_types['standard'].id,
+        is_active=True,
+        is_verified_email=True
+    ))
+    # Inactive standard user
+    users.append(User(
+        username='bob_inactive',
+        email='bob@example.com',
+        pw_hashed=generate_password_hash('password123'),
+        users_type_id=user_types['standard'].id,
+        is_active=False,
+        is_verified_email=True
+    ))
+    # Active reseller
+    users.append(User(
+        username='reseller_one',
+        email='reseller1@example.com',
+        pw_hashed=generate_password_hash('password123'),
+        users_type_id=user_types['reseller'].id,
+        is_active=True,
+        is_verified_email=True
+    ))
+    # Inactive reseller
+    users.append(User(
+        username='reseller_two',
+        email='reseller2@example.com',
+        pw_hashed=generate_password_hash('password123'),
+        users_type_id=user_types['reseller'].id,
+        is_active=False,
+        is_verified_email=True
+    ))
+    # Active admin
+    users.append(User(
+        username='admin_user',
+        email='admin@example.com',
+        pw_hashed=generate_password_hash('password123'),
+        users_type_id=user_types['admin'].id,
+        is_active=True,
+        is_verified_email=True
+    ))
+    db_session.add_all(users)
+    db_session.commit()
+    return users
+
+# Tests for build_user_search_query
+class TestBuildUserSearchQuery:
+    """Tests for the build_user_search_query function."""
+    
+    def test_returns_query_object(self, db_session, sample_users):
+        """Test that function returns a SQLAlchemy Query object."""
+        result = build_user_search_query(db_session, "")
+        assert isinstance(result, Query)
+    
+    def test_search_empty_term_active_only(self, db_session, sample_users):
+        """Test with empty search term and active_only=True."""
+        query = build_user_search_query(db_session, "", active_only=True)
+        results = query.all()
+        # Should return 4 active users (2 standard, 1 reseller, 1 admin)
+        assert len(results) == 4
+        assert all(user.is_active for user in results)
+    
+    def test_search_empty_term_all_users(self, db_session, sample_users):
+        """Test with empty search term and active_only=False."""
+        query = build_user_search_query(db_session, "", active_only=False)
+        results = query.all()
+        # Should return all 6 users
+        assert len(results) == 6
+    
+    def test_search_by_username(self, db_session, sample_users):
+        """Test searching by username."""
+        query = build_user_search_query(db_session, "john", active_only=True)
+        results = query.all()
+        assert len(results) == 1
+        assert results[0].username == 'john_doe'
+    
+    def test_search_by_email(self, db_session, sample_users):
+        """Test searching by email."""
+        query = build_user_search_query(db_session, "jane@example", active_only=True)
+        results = query.all()
+        assert len(results) == 1
+        assert results[0].email == 'jane@example.com'
+    
+    def test_search_case_insensitive(self, db_session, sample_users):
+        """Test that search is case-insensitive."""
+        query = build_user_search_query(db_session, "JOHN", active_only=True)
+        results = query.all()
+        assert len(results) == 1
+        assert results[0].username == 'john_doe'
+    
+    def test_search_partial_match(self, db_session, sample_users):
+        """Test partial matching in search."""
+        query = build_user_search_query(db_session, "reseller", active_only=True)
+        results = query.all()
+        # Should match both reseller usernames and emails, but only active one
+        assert len(results) == 1
+        assert 'reseller' in results[0].username.lower()
+    
+    def test_search_resellers_only_active(self, db_session, sample_users):
+        """Test filtering for resellers only with active_only=True."""
+        query = build_user_search_query(db_session, "", active_only=True, resellers_only=True)
+        results = query.all()
+        assert len(results) == 1
+        assert results[0].user_type.code == 'reseller'
+        assert results[0].is_active is True
+    
+    def test_search_resellers_only_all(self, db_session, sample_users):
+        """Test filtering for resellers only with active_only=False."""
+        query = build_user_search_query(db_session, "", active_only=False, resellers_only=True)
+        results = query.all()
+        # Should return both active and inactive resellers
+        assert len(results) == 2
+        assert all(user.user_type.code == 'reseller' for user in results)
+    
+    def test_search_resellers_with_term(self, db_session, sample_users):
+        """Test searching resellers with a search term."""
+        query = build_user_search_query(db_session, "reseller_one", active_only=True, resellers_only=True)
+        results = query.all()
+        assert len(results) == 1
+        assert results[0].username == 'reseller_one'
+    
+    def test_search_no_results(self, db_session, sample_users):
+        """Test search that returns no results."""
+        query = build_user_search_query(db_session, "nonexistent_user", active_only=True)
+        results = query.all()
+        assert len(results) == 0
+    
+    def test_search_inactive_users_excluded_by_default(self, db_session, sample_users):
+        """Test that inactive users are excluded when active_only=True."""
+        query = build_user_search_query(db_session, "bob", active_only=True)
+        results = query.all()
+        assert len(results) == 0
+    
+    def test_search_inactive_users_included(self, db_session, sample_users):
+        """Test that inactive users are included when active_only=False."""
+        query = build_user_search_query(db_session, "bob", active_only=False)
+        results = query.all()
+        assert len(results) == 1
+        assert results[0].username == 'bob_inactive'
+        assert results[0].is_active is False
+    
+    def test_search_multiple_matches(self, db_session, sample_users):
+        """Test search term that matches multiple users."""
+        query = build_user_search_query(db_session, "example.com", active_only=True)
+        results = query.all()
+        # Should match multiple users with example.com in email
+        assert len(results) >= 2
+    
+    def test_search_with_special_characters(self, db_session, sample_users):
+        """Test search with special characters."""
+        query = build_user_search_query(db_session, "@example", active_only=True)
+        results = query.all()
+        # Should match users with @example in their email
+        assert len(results) >= 2
+
+# Tests for prepare_user_list_data
+class TestPrepareUserListData:
+    """Tests for the prepare_user_list_data function."""
+    
+    def test_empty_list(self, db_session):
+        """Test with empty user list."""
+        result = prepare_user_list_data([])
+        assert result == []
+        assert isinstance(result, list)
+    
+    def test_single_user_standard(self, db_session, user_types):
+        """Test with a single standard user."""
+        user = User(
+            id=1,
+            username='test_user',
+            email='test@example.com',
+            is_active=True,
+            users_type_id=user_types['standard'].id
+        )
+        user.user_type = user_types['standard']
+        result = prepare_user_list_data([user])
+        assert len(result) == 1
+        assert result[0]['id'] == 1
+        assert result[0]['username'] == 'test_user'
+        assert result[0]['email'] == 'test@example.com'
+        assert result[0]['is_active'] is True
+        assert result[0]['is_reseller'] is False
+    
+    def test_single_user_reseller(self, db_session, user_types):
+        """Test with a single reseller user."""
+        user = User(
+            id=2,
+            username='reseller',
+            email='reseller@example.com',
+            is_active=True,
+            users_type_id=user_types['reseller'].id
+        )
+        user.user_type = user_types['reseller']
+        result = prepare_user_list_data([user])
+        assert len(result) == 1
+        assert result[0]['is_reseller'] is True
+    
+    def test_multiple_users(self, db_session, sample_users):
+        """Test with multiple users."""
+        result = prepare_user_list_data(sample_users[:3])
+        assert len(result) == 3
+        assert all(isinstance(item, dict) for item in result)
+        assert all('id' in item for item in result)
+        assert all('username' in item for item in result)
+        assert all('email' in item for item in result)
+        assert all('is_active' in item for item in result)
+        assert all('is_reseller' in item for item in result)
+    
+    def test_user_without_type(self, db_session):
+        """Test user without user_type set."""
+        user = User(
+            id=99,
+            username='no_type',
+            email='notype@example.com',
+            is_active=True,
+            users_type_id=None
+        )
+        user.user_type = None
+        result = prepare_user_list_data([user])
+        assert len(result) == 1
+        assert result[0]['is_reseller'] is False
+    
+    def test_data_structure_completeness(self, db_session, sample_users):
+        """Test that all required fields are present in the output."""
+        result = prepare_user_list_data(sample_users)
+        required_fields = ['id', 'username', 'email', 'is_active', 'is_reseller']
+        for user_data in result:
+            for field in required_fields:
+                assert field in user_data, f"Missing field: {field}"
+    
+    def test_data_types(self, db_session, sample_users):
+        """Test that data types are correct in the output."""
+        result = prepare_user_list_data(sample_users[:1])
+        assert isinstance(result[0]['id'], int)
+        assert isinstance(result[0]['username'], str)
+        assert isinstance(result[0]['email'], str)
+        assert isinstance(result[0]['is_active'], bool)
+        assert isinstance(result[0]['is_reseller'], bool)
+    
+    def test_inactive_user_flag(self, db_session, sample_users):
+        """Test that inactive user flag is correctly set."""
+        # Get the inactive user (bob_inactive)
+        inactive_user = [u for u in sample_users if u.username == 'bob_inactive'][0]
+        result = prepare_user_list_data([inactive_user])
+        assert result[0]['is_active'] is False
+    
+    def test_active_user_flag(self, db_session, sample_users):
+        """Test that active user flag is correctly set."""
+        # Get an active user
+        active_user = [u for u in sample_users if u.username == 'john_doe'][0]
+        result = prepare_user_list_data([active_user])
+        assert result[0]['is_active'] is True
+    
+    def test_mixed_user_types(self, db_session, sample_users):
+        """Test with a mix of different user types."""
+        result = prepare_user_list_data(sample_users)
+        resellers = [u for u in result if u['is_reseller']]
+        non_resellers = [u for u in result if not u['is_reseller']]
+        # Should have 2 resellers and 4 non-resellers in sample_users
+        assert len(resellers) == 2
+        assert len(non_resellers) == 4
+    
+    def test_preserves_order(self, db_session, sample_users):
+        """Test that the function preserves the order of users."""
+        result = prepare_user_list_data(sample_users)
+        for i, user in enumerate(sample_users):
+            assert result[i]['id'] == user.id
+            assert result[i]['username'] == user.username
+
+# Integration tests
+class TestIntegration:
+    """Integration tests combining both functions."""
+    
+    def test_query_and_prepare_active_users(self, db_session, sample_users):
+        """Test querying active users and preparing their data."""
+        query = build_user_search_query(db_session, "", active_only=True)
+        users = query.all()
+        result = prepare_user_list_data(users)
+        assert len(result) == 4
+        assert all(user['is_active'] for user in result)
+    
+    def test_query_and_prepare_resellers(self, db_session, sample_users):
+        """Test querying resellers and preparing their data."""
+        query = build_user_search_query(db_session, "", active_only=True, resellers_only=True)
+        users = query.all()
+        result = prepare_user_list_data(users)
+        assert len(result) == 1
+        assert all(user['is_reseller'] for user in result)
+    
+    def test_query_and_prepare_search_results(self, db_session, sample_users):
+        """Test searching and preparing results."""
+        query = build_user_search_query(db_session, "john", active_only=True)
+        users = query.all()
+        result = prepare_user_list_data(users)
+        assert len(result) == 1
+        assert result[0]['username'] == 'john_doe'
+        assert result[0]['email'] == 'john@example.com'
+    
+    def test_empty_query_results(self, db_session, sample_users):
+        """Test preparing data from empty query results."""
+        query = build_user_search_query(db_session, "nonexistent", active_only=True)
+        users = query.all()
+        result = prepare_user_list_data(users)
+        assert result == []

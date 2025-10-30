@@ -1,0 +1,243 @@
+"""
+Admin utility functions for media management.
+
+This module contains utility functions for admin media operations that are called
+from the main admin blueprint routes. Functions here should not have route decorators
+as they are imported and used by admin.py.
+
+Note: TVDB integration temporarily disabled; do not re-add imports from utils.utils_tvdb during plan 280925_api_cleanup.
+"""
+
+from flask import request, url_for, current_app, jsonify, render_template, flash, redirect
+from flask_login import current_user
+from flask_wtf.csrf import validate_csrf
+from datetime import datetime, timezone
+from sqlalchemy import func, and_, or_, distinct
+from sqlalchemy.orm import joinedload
+from utils.database import db
+import re
+import json
+import logging
+
+# Import required models
+from models.models_user import User, UserType, UserAction
+from models.models_media import Media, MediaType, Genre, MediaGenre, Director, MediaDirector, Performer, MediaPerformer
+
+# Import utility functions from specialized modules
+from routes.utils_admin_api import imdb_search_admin
+from utils.imdb_core import imdb_id_normalize, imdb_item_normalize, imdb_search_for_media_core
+# Import core media functions
+from utils.media_core import merge_and_deduplicate_results
+# TVDB utilities temporarily disabled - removed import of attach_tvdb_util, _to_tvdb_item
+
+# Import route helpers and form utilities for refactored functions
+from utils.route_helpers import handle_util_result, is_ajax_request
+from utils.media_associations_core import process_media_associations
+from routes.utils_admin_forms import extract_media_form_data, extract_search_params
+
+
+# Import media query helpers for refactored media_management_util
+from utils.media_query_core import (
+    build_media_search_query, normalize_media_results,
+    sort_media_results, paginate_media_query
+)
+
+logger = logging.getLogger(__name__)
+
+# Modified by google/gemini-2.5-flash | 2025-10-24
+def media_management_util():
+    """Orchestrate media management page display using modular helpers."""
+    try:
+        from utils.media_query_core import (
+            build_media_search_query, normalize_media_results,
+            sort_media_results, paginate_media_query
+        )
+        from utils.imdb_core import imdb_search_for_media_core
+        from routes.utils_admin_forms import extract_search_params
+        
+        # 1. Extract and validate search/filter parameters from request
+        params = extract_search_params(request)
+        page = request.args.get('page', 1, type=int)
+        
+        # 2. Build the base database query
+        query = build_media_search_query(
+            db.session, params['search_term'], params['genre_id']
+        )
+        
+        # 3. Paginate the query at the SQL level for efficiency
+        page_result = paginate_media_query(query, page)
+        
+        # 4. Load genres for the filter dropdown
+        genres = Genre.query.order_by(Genre.name.asc()).all()
+        
+        # 5. Perform external IMDb search for suggestions
+        external_results = []
+        if params['search_term']:
+            try:
+                external_results = imdb_search_for_media_core(
+                    search_term=params['search_term'],
+                    genre_name=None,
+                    timeout=8
+                )[:20]
+            except Exception:
+                external_results = []
+        
+        # 6. Normalize and sort the paginated DB results for display
+        normalized = normalize_media_results(page_result['items'])
+        sorted_media = sort_media_results(normalized, params['sort'], params['direction'])
+        
+        # 7. Return success payload for template rendering
+        return {
+            'success': True,
+            'template': 'admin/media.html',
+            'data': {
+                'media': sorted_media,
+                'external_suggestions': external_results[:10],
+                'q': params['search_term'],
+                'sort': params['sort'],
+                'direction': params['direction'],
+                'genres': genres,
+                'genre_id': params['genre_id'],
+                'pagination': {
+                    'page': page_result['page'],
+                    'per_page': page_result['per_page'],
+                    'total': page_result['total'],
+                    'has_next': page_result['has_next'],
+                    'has_prev': page_result['has_prev']
+                }
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error in media_management_util: {str(e)}", exc_info=True)
+        return {'success': False, 'error': str(e), 'status_code': 500}
+
+
+# Modified by Sonnet 4.5 | 2025-10-23
+def media_edit_util(media_id):
+    """
+    Handles both displaying and processing the media edit form.
+    This function has been refactored to use modular helpers.
+    """
+    # Modified by gpt-5-2025-08-07 | 2025-10-24
+    # Modified by openai/gpt-5 | 2025-10-23
+    # Fix incorrect relationship names in eager-load options:
+    # - Media.directors -> Media.media_directors (via backref on MediaDirector)
+    # - Media.performers -> Media.media_performers (via backref on MediaPerformer)
+    # Also eager-load nested entities to avoid N+1 queries used by the template.
+    media_item = db.session.query(Media).options(
+        joinedload(Media.media_type),
+        joinedload(Media.genres).joinedload(MediaGenre.genre),
+        joinedload(Media.media_directors).joinedload(MediaDirector.director),
+        joinedload(Media.media_performers).joinedload(MediaPerformer.performer)
+    ).filter_by(id=media_id).first_or_404()
+
+    media_types = MediaType.query.order_by(MediaType.name).all()
+
+    if request.method == 'GET':
+        return {
+            'success': True,
+            'template': 'admin/media_edit.html',
+            'data': {'media': media_item, 'media_types': media_types}
+        }
+
+    # --- POST Request Processing ---
+    try:
+        data, errors = extract_media_form_data(request)
+        if errors:
+            flash('. '.join(errors), 'error')
+            return handle_util_result({
+                'success': False, 
+                'template': 'admin/media_edit.html',
+                'data': {'media': media_item, 'media_types': media_types}
+            })
+
+        # Modified by google/gemini-2.5-flash | 2025-10-24
+        # Wrap updates and association processing in a single transaction for atomicity
+        with db.session.begin_nested():
+            # Update basic fields
+            media_item.title = data['title']
+            media_item.summary = data['summary']
+            media_item.rating = data['rating']
+            media_item.media_type_id = data['media_type_id']
+            media_item.is_public = data['is_public']
+            media_item.is_featured = data['is_featured']
+
+            # Process genres (uses CoreResult)
+            imdb_genres_str = data.get('imdb_genres_str')
+            if imdb_genres_str:
+                genre_result = process_media_associations(
+                    db.session, media_item.id, imdb_genres_str,
+                    MediaGenre, Genre,
+                    create_if_missing=False
+                )
+                if not genre_result.ok:
+                    db.session.rollback()
+                    return handle_util_result({
+                        'success': False,
+                        'message': f"Error processing genres: {', '.join(genre_result.errors)}",
+                        'template': 'admin/media_edit.html',
+                        'data': {'media': media_item, 'media_types': media_types}
+                    })
+
+            # Process directors
+            imdb_directors_str = data.get('imdb_directors_str')
+            if imdb_directors_str:
+                director_result = process_media_associations(
+                    db.session, media_item.id, imdb_directors_str,
+                    MediaDirector, Director,
+                    create_if_missing=False
+                )
+                if not director_result.ok:
+                    db.session.rollback()
+                    return handle_util_result({
+                        'success': False,
+                        'message': f"Error processing directors: {', '.join(director_result.errors)}",
+                        'template': 'admin/media_edit.html',
+                        'data': {'media': media_item, 'media_types': media_types}
+                    })
+
+            # Process performers
+            imdb_performers_str = data.get('imdb_performers_str')
+            if imdb_performers_str:
+                performer_result = process_media_associations(
+                    db.session, media_item.id, imdb_performers_str,
+                    MediaPerformer, Performer,
+                    create_if_missing=False
+                )
+                if not performer_result.ok:
+                    db.session.rollback()
+                    return handle_util_result({
+                        'success': False,
+                        'message': f"Error processing performers: {', '.join(performer_result.errors)}",
+                        'template': 'admin/media_edit.html',
+                        'data': {'media': media_item, 'media_types': media_types}
+                    })
+
+        # Commit outer transaction after successful nested block
+        db.session.commit()
+
+        UserAction.log_action(
+            user_id=current_user.id,
+            action_type='admin_edit_media',
+            action_category='admin',
+            details={'media_id': media_item.id, 'title': media_item.title},
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', '')
+        )
+
+        flash(f'Successfully updated "{media_item.title}".', 'success')
+        return handle_util_result({
+            'success': True,
+            'redirect': url_for('admin.media')
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Unexpected error in media_edit_util for media_id {media_id}: {e}", exc_info=True)
+        flash('An unexpected error occurred. Please try again.', 'error')
+        return handle_util_result({
+            'success': False,
+            'template': 'admin/media_edit.html',
+            'data': {'media': media_item, 'media_types': media_types},
+            'status_code': 500
+        })

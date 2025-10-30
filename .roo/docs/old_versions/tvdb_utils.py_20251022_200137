@@ -1,0 +1,181 @@
+"""
+TVDB API utility functions - Core implementations.
+
+This module contains the core TVDB API functionality that serves as the 
+canonical implementation. Other TVDB modules should delegate to functions
+in this module to avoid duplication.
+
+This follows the {domain}_{specific} naming convention established in 
+the duplicate elimination refactoring project.
+"""
+
+import json
+import time
+import os
+import requests
+from flask import current_app
+
+
+def get_tvdb_token_core():
+    """
+    Core implementation: Retrieves a valid TVDB API token, caching it and refreshing if necessary.
+    
+    Returns:
+        str: Valid TVDB API token
+        
+    Raises:
+        ValueError: If TVDB_API_KEY is not configured
+        ConnectionError: If API authentication fails
+    """
+    token_file = current_app.config['TVDB_TOKEN_FILE']
+    
+    # Ensure the instance folder exists
+    os.makedirs(os.path.dirname(token_file), exist_ok=True)
+
+    # Check for a cached token
+    if os.path.exists(token_file):
+        with open(token_file, 'r') as f:
+            try:
+                data = json.load(f)
+                # Tokens are valid for 1 month, but we'll refresh after 24 hours for safety
+                if time.time() - data.get('timestamp', 0) < 86400:
+                    return data.get('token')
+            except json.JSONDecodeError:
+                # Invalid JSON, proceed to get a new token
+                pass
+
+    # Authenticate to get a new token
+    api_key = current_app.config['TVDB_API_KEY']
+    if not api_key:
+        raise ValueError("TVDB_API_KEY is not set in the configuration.")
+
+    try:
+        response = requests.post(
+            'https://api4.thetvdb.com/v4/login',
+            json={'apikey': api_key},
+            timeout=current_app.config.get('TVDB_TIMEOUT', 15)
+        )
+        response.raise_for_status()
+        token_data = response.json()
+        token = token_data.get('data', {}).get('token')
+
+        if not token:
+            raise ValueError("Failed to retrieve token from TVDB API response.")
+
+        # Cache the new token
+        with open(token_file, 'w') as f:
+            json.dump({'token': token, 'timestamp': time.time()}, f)
+        
+        return token
+    except requests.exceptions.RequestException as e:
+        # Handle network errors or bad responses
+        raise ConnectionError(f"Error connecting to TVDB API: {e}") from e
+
+
+def search_tvdb_series_core(query):
+    """
+    Core implementation: Searches for a series on TVDB.
+    
+    Args:
+        query (str): Search query string
+        
+    Returns:
+        list: List of search results from TVDB API
+        
+    Raises:
+        ConnectionError: If the search request fails
+    """
+    token = get_tvdb_token_core()
+    headers = {'Authorization': f'Bearer {token}'}
+    params = {'query': query}
+    
+    try:
+        response = requests.get(
+            'https://api4.thetvdb.com/v4/search',
+            headers=headers,
+            params=params,
+            timeout=current_app.config.get('TVDB_TIMEOUT', 15)
+        )
+        response.raise_for_status()
+        return response.json().get('data', [])
+    except requests.exceptions.RequestException as e:
+        raise ConnectionError(f"Error searching TVDB for '{query}': {e}") from e
+
+
+def get_tvdb_series_details_core(tvdb_id):
+    """
+    Core implementation: Retrieves detailed series metadata from TVDB.
+    
+    Args:
+        tvdb_id (str): TVDB series ID
+        
+    Returns:
+        dict: Series details from TVDB API
+        
+    Raises:
+        ConnectionError: If the details request fails
+    """
+    token = get_tvdb_token_core()
+    headers = {'Authorization': f'Bearer {token}'}
+    
+    try:
+        response = requests.get(
+            f'https://api4.thetvdb.com/v4/series/{tvdb_id}/extended',
+            headers=headers,
+            timeout=current_app.config.get('TVDB_TIMEOUT', 15)
+        )
+        response.raise_for_status()
+        return response.json().get('data')
+    except requests.exceptions.RequestException as e:
+        raise ConnectionError(f"Error retrieving details for TVDB ID '{tvdb_id}': {e}") from e
+
+
+def get_tvdb_movie_details_core(tvdb_id):
+    """
+    Core implementation: Retrieves detailed movie metadata from TVDB.
+    
+    Args:
+        tvdb_id (str): TVDB movie ID
+        
+    Returns:
+        dict: Movie details from TVDB API
+        
+    Raises:
+        ConnectionError: If the details request fails
+    """
+    token = get_tvdb_token_core()
+    headers = {'Authorization': f'Bearer {token}'}
+    
+    try:
+        response = requests.get(
+            f'https://api4.thetvdb.com/v4/movies/{tvdb_id}/extended',
+            headers=headers,
+            timeout=current_app.config.get('TVDB_TIMEOUT', 15)
+        )
+        response.raise_for_status()
+        return response.json().get('data')
+    except requests.exceptions.RequestException as e:
+        raise ConnectionError(f"Error retrieving movie details for TVDB ID '{tvdb_id}': {e}") from e
+
+
+def clear_tvdb_token_core():
+    """
+    Core implementation: Clears the cached TVDB token file.
+    """
+    token_file = current_app.config['TVDB_TOKEN_FILE']
+    if os.path.exists(token_file):
+        try:
+            os.remove(token_file)
+        except OSError:
+            # Handle potential errors during file removal
+            pass
+
+
+# Define public API
+__all__ = [
+    'get_tvdb_token_core',
+    'search_tvdb_series_core', 
+    'get_tvdb_series_details_core',
+    'get_tvdb_movie_details_core',
+    'clear_tvdb_token_core'
+]

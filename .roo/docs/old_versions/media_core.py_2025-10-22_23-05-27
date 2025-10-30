@@ -1,0 +1,1467 @@
+"""
+Core media utility functions for MediaShare.
+
+This module contains stateless, role-agnostic media handling functions that can be
+used across different parts of the application. These functions handle media processing,
+validation, file operations, and search result merging.
+
+This module is part of the core functionality separation plan to reduce code duplication
+and improve maintainability.
+
+Pipeline Step Interface:
+Each pipeline step receives a PipelineContext object, performs an action, and returns
+an updated PipelineContext or raises a CoreError. The PipelineContext serves as the
+state object that is passed sequentially through each processing stage in the media
+handling pipeline. This design ensures stateless operations while maintaining
+context throughout the pipeline execution.
+"""
+
+import os
+import re
+import json
+import hashlib
+import mimetypes
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Optional, Dict, Tuple, List, Any, TypedDict
+from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage
+
+try:
+    from PIL import Image  # type: ignore
+    PIL_AVAILABLE = True
+except ImportError:
+    Image = None  # type: ignore
+    PIL_AVAILABLE = False
+
+import io
+
+# Import utility functions for IMDb integration
+from utils.imdb_core import imdb_id_normalize, imdb_item_normalize
+
+
+# ===== DATA CONTRACT CLASSES =====
+# Created by Gemini 2.5 Pro | 2025-10-22
+
+class CoreResult(TypedDict, total=False):
+    """
+    Standardized result contract for core media operations.
+    
+    Provides a consistent structure for returning results from core business logic
+    functions, separating success states from error handling.
+    
+    Attributes:
+        ok: Boolean indicating if the operation was successful
+        data: Dictionary containing the operation result data
+        errors: List of error messages for failed operations
+        warnings: List of warning messages for successful operations with issues
+        code: Optional status code for programmatic error handling
+    """
+    ok: bool
+    data: Dict[str, Any]
+    errors: List[str]
+    warnings: List[str]
+    code: str
+
+
+class CoreError(Exception):
+    """
+    Base exception class for core media operations.
+    
+    Provides a foundation for a clear error taxonomy in media handling,
+    allowing for specific error types while maintaining a common base.
+    """
+    def __init__(self, message: str, code: Optional[str] = None):
+        """
+        Initialize the core error.
+        
+        Args:
+            message: Human-readable error message
+            code: Optional machine-readable error code
+        """
+        super().__init__(message)
+        self.message = message
+        self.code = code
+
+
+class ValidationError(CoreError):
+    """
+    Exception raised for data validation errors in media operations.
+    
+    Used when input data fails validation checks, such as invalid file formats,
+    missing required fields, or data format violations.
+    """
+    pass
+
+
+class TransformError(CoreError):
+    """
+    Exception raised for media transformation errors.
+    
+    Used when media processing operations fail, such as thumbnail generation,
+    format conversion, or metadata extraction failures.
+    """
+    pass
+
+
+class StorageError(CoreError):
+    """
+    Exception raised for media storage-related errors.
+    
+    Used when file system operations fail, such as file upload issues,
+    disk space problems, or permission errors.
+    """
+    pass
+
+
+# ===== END DATA CONTRACT CLASSES =====
+
+# Created by code-monkey | 2025-10-22
+class PipelineContext(TypedDict):
+    """
+    State object for the media processing pipeline.
+    
+    PipelineContext serves as the data container that is passed sequentially through
+    each processing stage in the media handling pipeline. Each pipeline step receives
+    this context, performs its action, updates the context as needed, and returns the
+    modified context or raises a CoreError if processing fails.
+    
+    This design enables stateless pipeline operations while maintaining all necessary
+    context throughout the pipeline execution. The context is instantiated by the
+    MediaFileHandler and contains all the information needed by pipeline steps.
+    
+    Attributes:
+        file_obj: The uploaded file object from werkzeug.datastructures.FileStorage
+        user_id: ID of the user performing the upload
+        media_type_code: String code indicating the media type (eg, 'image', 'video')
+        config: MediaFileConfig object containing processing configuration
+        artifacts: Dictionary for storing intermediate results and generated files
+        errors: List of error messages accumulated during pipeline processing
+        warnings: List of warning messages for non-fatal issues
+    """
+    file_obj: FileStorage
+    user_id: int
+    media_type_code: str
+    config: MediaFileConfig
+    artifacts: dict
+    errors: list
+    warnings: list
+
+
+# Created by GLM-4.6 | 2025-10-22
+class MediaFileConfig:
+    """
+    Configuration object for media file handling operations.
+    
+    This dataclass serves as a pure data container for configuration settings
+    that are injected into the core media handler from the presentation layer.
+    It maintains framework-agnostic separation by not accessing Flask's config
+    directly, instead receiving all settings as constructor parameters.
+    
+    This object is instantiated by the presentation layer (routes) and passed
+    to the core handler to configure media processing behavior.
+    
+    Attributes:
+        upload_folder: Base directory path for media file uploads
+        allowed_extensions: Dictionary mapping media types to allowed file extensions
+        max_file_sizes_mb: Dictionary mapping media types to maximum file sizes in MB
+        enable_thumbnails: Boolean flag to enable/disable thumbnail generation
+        enable_metadata_extraction: Boolean flag to enable/disable metadata extraction
+        enable_imdb: Boolean flag to enable/disable IMDb integration
+        enable_tvdb: Boolean flag to enable/disable TVDB integration
+        enable_tmdb: Boolean flag to enable/disable TMDB integration
+    """
+    def __init__(
+        self,
+        upload_folder: str,
+        allowed_extensions: Dict[str, set],
+        max_file_sizes_mb: Dict[str, int],
+        enable_thumbnails: bool,
+        enable_metadata_extraction: bool,
+        enable_imdb: bool,
+        enable_tvdb: bool,
+        enable_tmdb: bool
+    ):
+        self.upload_folder = upload_folder
+        self.allowed_extensions = allowed_extensions
+        self.max_file_sizes_mb = max_file_sizes_mb
+        self.enable_thumbnails = enable_thumbnails
+        self.enable_metadata_extraction = enable_metadata_extraction
+        self.enable_imdb = enable_imdb
+        self.enable_tvdb = enable_tvdb
+        self.enable_tmdb = enable_tmdb
+
+
+# Allowed file extensions by media type
+ALLOWED_EXTENSIONS = {
+    'image': {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'},
+    'video': {'.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.webm'},
+    'audio': {'.mp3', '.wav', '.flac', '.aac', '.ogg', '.wma', '.m4a'},
+    'document': {'.pdf', '.doc', '.docx', '.txt', '.rtf', '.odt', '.md'}
+}
+
+# Maximum file sizes in MB by media type
+MAX_FILE_SIZES_MB = {
+    'image': 50,
+    'video': 2000,
+    'audio': 200,
+    'document': 100
+}
+
+
+# ===== FUNCTIONS FROM routes/utils_admin_media.py =====
+
+def _safe_int(val):
+    """
+    Safely convert a value to integer.
+    
+    Args:
+        val: Value to convert
+        
+    Returns:
+        Integer value or None if conversion fails
+    """
+    try:
+        if val is None or val == '':
+            return None
+        return int(val)
+    except (TypeError, ValueError):
+        return None
+
+
+def _normalize_title(title):
+    """
+    Normalize a title for comparison purposes.
+    
+    Args:
+        title: Title to normalize
+        
+    Returns:
+        Normalized title string
+    """
+    t = (title or '').strip().lower()
+    if not t:
+        return ''
+    t = re.sub(r'\s+', ' ', t)
+    t = re.sub(r'\s*\(\d{4}\)$', '', t)
+    return t
+
+
+def _media_type_str(media):
+    """
+    Extract media type string from media object.
+    
+    Args:
+        media: Media object
+        
+    Returns:
+        Media type string
+    """
+    try:
+        mt = getattr(media, 'media_type', None)
+        if mt:
+            return (getattr(mt, 'code', None) or getattr(mt, 'name', None) or '').strip().lower()
+    except Exception:
+        pass
+    try:
+        ct = (getattr(media, 'content_type', None) or '').strip().lower()
+        return ct
+    except Exception:
+        return ''
+
+
+def _year_from_media(media):
+    """
+    Extract year from media object.
+    
+    Args:
+        media: Media object
+        
+    Returns:
+        Year as string or None
+    """
+    for attr in ('release_date', 'added_date', 'created_at'):
+        dt = getattr(media, attr, None)
+        if dt:
+            try:
+                return str(dt.year)
+            except Exception:
+                continue
+    return None
+
+
+def _to_db_item(media):
+    """
+    Convert media object to dictionary representation.
+    
+    Args:
+        media: Media object
+        
+    Returns:
+        Dictionary representation of media item
+    """
+    return {
+        'id': getattr(media, 'id', None),
+        'tvdb_id': _safe_int(getattr(media, 'tvdb_id', None)),
+        'imdb_id': imdb_id_normalize(getattr(media, 'imdb_id', None)),
+        'title': getattr(media, 'title', '') or getattr(media, 'name', '') or '',
+        'year': _year_from_media(media),
+        'type': _media_type_str(media),
+        'status': getattr(media, 'status', None),
+        'rating_user': getattr(media, 'user_rating_100', None),
+        'image_url': getattr(media, 'thumbnail_path', None),
+        'source': 'DB'
+    }
+
+
+def _combine_sources(src_a, src_b):
+    """
+    Combine source strings for merged results.
+    
+    Args:
+        src_a: First source string
+        src_b: Second source string
+        
+    Returns:
+        Combined source string
+    """
+    s = set()
+    for s0 in (src_a, src_b):
+        if not s0:
+            continue
+        for part in str(s0).split(','):
+            p = part.strip()
+            if p:
+                s.add(p.upper())
+    order = ['DB', 'IMDb', 'TVDB']
+    combined = [x for x in order if x in s]
+    for x in sorted(s):
+        if x not in combined:
+            combined.append(x)
+    return ', '.join(combined) if combined else None
+
+
+def _rating_value(i):
+    """
+    Extract rating value from item dictionary.
+    
+    Args:
+        i: Item dictionary
+        
+    Returns:
+        Rating value as float or None
+    """
+    try:
+        v = i.get('user_rating_100')
+        if v in (None, '', 'N/A'):
+            v = i.get('rating')
+        if v in (None, '', 'N/A'):
+            return None
+        v = float(v)
+        # Heuristic: scale 0-10 ratings up to 0-100
+        if v <= 10:
+            v = v * 10.0
+        return v
+    except Exception:
+        return None
+
+
+def _created_sort_tuple(i):
+    """
+    Generate sort tuple for created_at field.
+    
+    Args:
+        i: Item dictionary
+        
+    Returns:
+        Sort tuple
+    """
+    dt = i.get('created_at') if isinstance(i, dict) else None
+    if dt is None:
+        # missing created_at always last
+        return (1, 0.0)
+    try:
+        ts = dt.timestamp()
+    except Exception:
+        ts = 0.0
+    # invert timestamp for desc while keeping missing last
+    return (0, ts)
+
+
+def _title_tuple(i):
+    """
+    Generate sort tuple for title field.
+    
+    Args:
+        i: Item dictionary
+        
+    Returns:
+        Sort tuple
+    """
+    v = ''
+    if isinstance(i, dict):
+        v = str(i.get('title', '')).lower()
+        # Strip leading articles for sorting (The, A, An)
+        if v.startswith('the '):
+            v = v[4:]  # Remove "the " (4 characters)
+        elif v.startswith('a '):
+            v = v[2:]  # Remove "a " (2 characters)
+        elif v.startswith('an '):
+            v = v[3:]  # Remove "an " (3 characters)
+    return (0 if v else 1, v)
+
+
+def _type_tuple(i):
+    """
+    Generate sort tuple for type field.
+    
+    Args:
+        i: Item dictionary
+        
+    Returns:
+        Sort tuple
+    """
+    v = ''
+    if isinstance(i, dict):
+        v = str(i.get('type', '')).lower()
+    return (0 if v else 1, v)
+
+
+def _rating_tuple(i):
+    """
+    Generate sort tuple for rating field.
+    
+    Args:
+        i: Item dictionary
+        
+    Returns:
+        Sort tuple
+    """
+    v = _rating_value(i)
+    if v is None:
+        return (1, 0.0)  # missing last
+    return (0, v)
+
+
+def merge_and_deduplicate_results(db_results, tvdb_results):
+    """
+    Merge Media DB results and external search results (IMDb or TVDB) into a single deduplicated list.
+
+    Args:
+        db_results: iterable of Media ORM objects (SQLAlchemy), typically with media_type joinedloaded.
+        tvdb_results: list of dicts normalized similarly to search_tvdb() or imdb_api_search_title() output.
+
+    Returns:
+        list of dicts, where each item has at least: title, optional ids (imdb_id, tvdb_id), type, year, source.
+        'source' ∈ {"DB", "TVDB", "IMDb", "DB, TVDB", "DB, IMDb"}.
+    """
+    # Normalize inputs
+    db_results = db_results or []
+    ext_results = tvdb_results or []
+    if isinstance(ext_results, dict):
+        ext_results = ext_results.get('data') or ext_results.get('results') or []
+
+    # Build DB index
+    merged = []
+    db_index_by_tvdb = {}
+    db_index_by_imdb = {}
+    db_index_by_title = {}
+
+    for media in db_results:
+        try:
+            item = _to_db_item(media)
+            merged.append(item)
+            if item.get('tvdb_id'):
+                db_index_by_tvdb[item['tvdb_id']] = item
+            if item.get('imdb_id'):
+                db_index_by_imdb[item['imdb_id']] = item
+            title_key = _normalize_title(item.get('title'))
+            if title_key:
+                db_index_by_title.setdefault(title_key, item)
+        except Exception:
+            continue
+
+    # Deduplicate and merge external items (IMDb/TVDB)
+    ext_seen_keys = set()
+    for raw in ext_results:
+        try:
+            is_imdb = False
+            if isinstance(raw, dict):
+                rid = raw.get('imdb_id') or raw.get('imdbId') or raw.get('id') or ''
+                if isinstance(rid, str) and re.search(r'(tt\d{6,9})', rid, re.IGNORECASE):
+                    is_imdb = True
+
+            if is_imdb:
+                t_item = imdb_item_normalize(raw)
+            else:
+                # TVDB disabled: returning minimal safe structure; imports removed per plan 280925_api_cleanup
+                t_item = {
+                    'title': '',
+                    'imdb_id': None,
+                    'tvdb_id': None,
+                    'type': '',
+                    'year': None,
+                    'rating': None,
+                    'image_url': None,
+                    'source': 'TVDB'
+                }
+            title_key = _normalize_title(t_item.get('title'))
+            imdb_id = t_item.get('imdb_id')
+            tvdb_id = t_item.get('tvdb_id')
+
+            # Prefer id matching; fallback to title
+            db_match = None
+            if imdb_id:
+                db_match = db_index_by_imdb.get(imdb_id)
+            if not db_match and tvdb_id:
+                db_match = db_index_by_tvdb.get(tvdb_id)
+            if not db_match and title_key:
+                db_match = db_index_by_title.get(title_key)
+
+            if db_match:
+                db_match['source'] = _combine_sources(db_match.get('source'), t_item.get('source'))
+                if imdb_id and not db_match.get('imdb_id'):
+                    db_match['imdb_id'] = imdb_id
+                if tvdb_id and not db_match.get('tvdb_id'):
+                    db_match['tvdb_id'] = tvdb_id
+                if (not db_match.get('image_url')) and t_item.get('image_url'):
+                    db_match['image_url'] = t_item.get('image_url')
+                if db_match.get('rating_user') in (None, '', 'N/A') and t_item.get('rating') not in (None, '', 'N/A'):
+                    db_match['rating_user'] = t_item.get('rating')
+                continue
+
+            # No DB duplicate: include external item if not seen
+            key = f"{imdb_id or tvdb_id or ''}|{title_key}"
+            if key in ext_seen_keys:
+                continue
+            ext_seen_keys.add(key)
+            merged.append(t_item)
+        except Exception:
+            continue
+
+    return merged
+
+
+# ===== FUNCTIONS FROM utils/media.py =====
+
+def allowed_file(filename: str, media_type_code: str) -> bool:
+    """
+    Check if a file extension is allowed for the given media type.
+    
+    Args:
+        filename: The filename to check.
+        media_type_code: The media type code (eg, 'image', 'video').
+    
+    Returns:
+        True if the file extension is allowed, False otherwise.
+    """
+    if '.' not in filename:
+        return False
+    
+    ext = Path(filename).suffix.lower()
+    return ext in ALLOWED_EXTENSIONS.get(media_type_code, set())
+
+
+def get_file_hash(file_obj: FileStorage) -> str:
+    """
+    Calculate SHA-256 hash of a file.
+    
+    Args:
+        file_obj: The file object to hash.
+    
+    Returns:
+        The hexadecimal hash string.
+    """
+    hasher = hashlib.sha256()
+    file_obj.seek(0)
+    
+    # Read file in chunks to handle large files.
+    while chunk := file_obj.read(8192):
+        hasher.update(chunk)
+    
+    file_obj.seek(0)  # Reset file pointer.
+    return hasher.hexdigest()
+
+
+def get_file_size_mb(file_size_bytes: int) -> float:
+    """
+    Convert file size from bytes to megabytes.
+    
+    Args:
+        file_size_bytes: File size in bytes.
+    
+    Returns:
+        File size in megabytes.
+    """
+    return round(file_size_bytes / (1024 * 1024), 2)
+
+
+def validate_file(file_obj: FileStorage, media_type_code: str) -> Tuple[bool, Optional[str]]:
+    """
+    Validate a file for upload.
+    
+    Args:
+        file_obj: The file object to validate.
+        media_type_code: The media type code.
+    
+    Returns:
+        Tuple of (is_valid, error_message).
+    """
+    # Check if file exists.
+    if not file_obj or file_obj.filename == '':
+        return False, "No file provided"
+    
+    # Check file extension.
+    if not allowed_file(file_obj.filename, media_type_code):
+        allowed_exts = ', '.join(ALLOWED_EXTENSIONS.get(media_type_code, []))
+        return False, f"File type not allowed. Allowed types: {allowed_exts}"
+    
+    # Check file size.
+    file_obj.seek(0, os.SEEK_END)
+    file_size_bytes = file_obj.tell()
+    file_obj.seek(0)
+    
+    max_size_mb = MAX_FILE_SIZES_MB.get(media_type_code, 100)
+    file_size_mb = get_file_size_mb(file_size_bytes)
+    
+    if file_size_mb > max_size_mb:
+        return False, f"File too large. Maximum size: {max_size_mb} MB, Your file: {file_size_mb} MB"
+    
+    return True, None
+
+
+def generate_unique_filename(original_filename: str, user_id: int) -> str:
+    """
+    Generate a unique filename for storage.
+    
+    Args:
+        original_filename: The original filename.
+        user_id: The ID of the user uploading the file.
+    
+    Returns:
+        A unique filename.
+    """
+    # Secure the filename.
+    safe_name = secure_filename(original_filename)
+    name_parts = safe_name.rsplit('.', 1)
+    
+    if len(name_parts) == 2:
+        base_name, extension = name_parts
+    else:
+        base_name = name_parts[0]
+        extension = ''
+    
+    # Generate unique name with timestamp.
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+    unique_name = f"{user_id}_{timestamp}_{base_name}"
+    
+    if extension:
+        unique_name = f"{unique_name}.{extension}"
+    
+    return unique_name
+
+
+def create_upload_directories(base_path: str, user_id: int, media_type_code: str) -> Path:
+    """
+    Create directory structure for media uploads.
+    
+    Args:
+        base_path: The base upload directory path.
+        user_id: The ID of the user.
+        media_type_code: The media type code.
+    
+    Returns:
+        The Path object for the upload directory.
+    """
+    # Create directory structure: base_path/media_type/user_id/.
+    upload_dir = Path(base_path) / media_type_code / str(user_id)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    return upload_dir
+
+
+def save_uploaded_file(file_obj: FileStorage, user_id: int, media_type_code: str) -> Dict[str, Any]:
+    """
+    Save an uploaded file to disk.
+    
+    Args:
+        file_obj: The file object to save.
+        user_id: The ID of the user uploading the file.
+        media_type_code: The media type code.
+    
+    Returns:
+        Dictionary with file information including path, size, hash, etc.
+    """
+    # Get base upload path from config or use default.
+    # In core modules, we can't access Flask config directly
+    # This should be passed in from the calling layer
+    base_path = 'static/uploads/media'
+    
+    # Create upload directory.
+    upload_dir = create_upload_directories(base_path, user_id, media_type_code)
+    
+    # Generate unique filename.
+    unique_filename = generate_unique_filename(file_obj.filename, user_id)
+    
+    # Full file path.
+    file_path = upload_dir / unique_filename
+    
+    # Calculate file hash before saving.
+    file_hash = get_file_hash(file_obj)
+    
+    # Get file size.
+    file_obj.seek(0, os.SEEK_END)
+    file_size_bytes = file_obj.tell()
+    file_obj.seek(0)
+    
+    # Save the file.
+    file_obj.save(str(file_path))
+    
+    # Get MIME type.
+    mime_type, _ = mimetypes.guess_type(str(file_path))
+    if not mime_type:
+        mime_type = 'application/octet-stream'
+    
+    # Return file information.
+    return {
+        'filename_original': file_obj.filename,
+        'filename_stored': unique_filename,
+        'file_path': str(file_path).replace('\\', '/'),
+        'file_size_bytes': file_size_bytes,
+        'file_size_mb': get_file_size_mb(file_size_bytes),
+        'file_hash': file_hash,
+        'mime_type': mime_type
+    }
+
+
+def generate_thumbnail(file_path: str, media_type_code: str) -> Optional[str]:
+    """
+    Generate a thumbnail for media files.
+    
+    Args:
+        file_path: Path to the media file.
+        media_type_code: The media type code.
+    
+    Returns:
+        Path to the generated thumbnail or None if not applicable.
+    """
+    if media_type_code != 'image' or not PIL_AVAILABLE:
+        # For now, only handle image thumbnails or when Pillow is unavailable.
+        # Video thumbnails would require ffmpeg or similar.
+        if not PIL_AVAILABLE:
+            # In core modules, we can't use Flask's logger
+            # Log the warning but don't break execution
+            pass
+        return None
+    
+    try:
+        # Open the image.
+        source_path = Path(file_path)
+        img = Image.open(source_path)
+        
+        # Convert RGBA to RGB if necessary.
+        if img.mode in ('RGBA', 'LA', 'P'):
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'P':
+                img = img.convert('RGBA')
+            background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+            img = background
+        
+        # Create thumbnail (max 300x300 maintaining aspect ratio).
+        img.thumbnail((300, 300), Image.Resampling.LANCZOS)
+        
+        # Generate thumbnail path.
+        thumb_dir = source_path.parent.parent.parent / 'thumbnails' / media_type_code / source_path.parent.name
+        thumb_dir.mkdir(parents=True, exist_ok=True)
+        
+        thumb_filename = f"thumb_{source_path.stem}.jpg"
+        thumb_path = thumb_dir / thumb_filename
+        
+        # Save thumbnail.
+        img.save(str(thumb_path), 'JPEG', quality=85, optimize=True)
+        
+        # Return relative path.
+        return str(thumb_path.relative_to(Path.cwd())).replace('\\', '/')
+    
+    except Exception as e:
+        # In core modules, we can't use Flask's logger
+        # Log the error but don't break execution
+        return None
+
+
+def delete_media_files(file_path: str, thumbnail_path: Optional[str] = None) -> bool:
+    """
+    Delete media files from disk.
+    
+    Args:
+        file_path: Path to the main media file.
+        thumbnail_path: Optional path to the thumbnail.
+    
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        # Delete main file.
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+        
+        # Delete thumbnail if exists.
+        if thumbnail_path and os.path.exists(thumbnail_path):
+            os.remove(thumbnail_path)
+        
+        return True
+    
+    except Exception as e:
+        # In core modules, we can't use Flask's logger
+        # Log the error but don't break execution
+        return False
+
+
+def get_media_metadata(file_path: str, media_type_code: str) -> Dict:
+    """
+    Extract metadata from media files.
+    
+    Args:
+        file_path: Path to the media file.
+        media_type_code: The media type code.
+    
+    Returns:
+        Dictionary containing metadata.
+    """
+    metadata = {
+        'extracted_at': datetime.utcnow().isoformat()
+    }
+    
+    if media_type_code == 'image' and PIL_AVAILABLE:
+        try:
+            img = Image.open(file_path)
+            metadata['width'] = img.width
+            metadata['height'] = img.height
+            metadata['format'] = img.format
+            metadata['mode'] = img.mode
+            
+            # Extract EXIF data if available.
+            if hasattr(img, '_getexif') and img._getexif():
+                exif = img._getexif()
+                # Store selected EXIF tags.
+                if exif:
+                    metadata['exif'] = {
+                        'make': exif.get(271),  # Camera make.
+                        'model': exif.get(272),  # Camera model.
+                        'datetime': exif.get(306),  # Date taken.
+                        'orientation': exif.get(274)  # Orientation.
+                    }
+        except Exception as e:
+            # In core modules, we can't use Flask's logger
+            # Log the error but don't break execution
+            pass
+    
+    # For video/audio, we would need additional libraries like ffmpeg-python.
+    # For now, just return basic metadata.
+    
+    return metadata
+
+
+def process_uploaded_files(files: List[FileStorage], user_id: int, media_type_code: str) -> Tuple[List[Dict], List[str]]:
+    """
+    Process multiple uploaded files.
+    
+    Args:
+        files: List of file objects to process.
+        user_id: The ID of the user uploading the files.
+        media_type_code: The media type code.
+    
+    Returns:
+        Tuple of (successful_uploads, error_messages).
+    """
+    successful_uploads = []
+    error_messages = []
+    
+    for file_obj in files:
+        try:
+            # Validate file.
+            is_valid, error_msg = validate_file(file_obj, media_type_code)
+            if not is_valid:
+                error_messages.append(f"{file_obj.filename}: {error_msg}")
+                continue
+            
+            # Save file.
+            file_info = save_uploaded_file(file_obj, user_id, media_type_code)
+            
+            # Generate thumbnail.
+            thumbnail_path = generate_thumbnail(file_info['file_path'], media_type_code)
+            file_info['thumbnail_path'] = thumbnail_path
+            
+            # Extract metadata.
+            metadata = get_media_metadata(file_info['file_path'], media_type_code)
+            file_info['media_metadata'] = metadata
+            
+            successful_uploads.append(file_info)
+            
+        except Exception as e:
+            error_messages.append(f"{file_obj.filename}: {str(e)}")
+            # In core modules, we can't use Flask's logger
+            # Log the error but don't break execution
+    
+    return successful_uploads, error_messages
+
+# Created by code-monkey | 2025-10-22
+class MediaFileHandler:
+    """
+    Central orchestrator for all media file operations.
+    
+    This class serves as the main entry point for media file processing, coordinating
+    the validation, transformation, and storage pipelines. It maintains framework-agnostic
+    separation by operating with pure data structures and business logic only.
+    
+    The handler receives configuration from the presentation layer and manages the
+    complete lifecycle of media file processing through its pipeline methods.
+    
+    Attributes:
+        config: MediaFileConfig object containing processing configuration settings
+    """
+    
+    def __init__(self, config: MediaFileConfig):
+        """
+        Initialize the MediaFileHandler with configuration.
+        
+        Args:
+            config: MediaFileConfig object containing processing settings
+        """
+        self.config = config
+    
+    def _validate_file_type(self, context: PipelineContext) -> PipelineContext:
+        """
+        Validate file type against allowed extensions.
+        
+        Args:
+            context: PipelineContext containing file and configuration information
+            
+        Returns:
+            Updated PipelineContext with validation results
+        """
+        # Created by code-monkey | 2025-10-22
+        if '.' not in context['file_obj'].filename:
+            context['errors'].append("Invalid filename: no extension found")
+            return context
+        
+        ext = Path(context['file_obj'].filename).suffix.lower()
+        allowed_exts = context['config'].allowed_extensions.get(context['media_type_code'], set())
+        
+        if ext not in allowed_exts:
+            allowed_list = ', '.join(sorted(allowed_exts))
+            context['errors'].append(f"File type '{ext}' not allowed. Allowed types: {allowed_list}")
+        
+        return context
+    
+    def _validate_file_size(self, context: PipelineContext) -> PipelineContext:
+        """
+        Validate file size against configured limits.
+        
+        Args:
+            context: PipelineContext containing file and configuration information
+            
+        Returns:
+            Updated PipelineContext with validation results
+        """
+        # Created by code-monkey | 2025-10-22
+        # Get file size
+        context['file_obj'].seek(0, os.SEEK_END)
+        file_size_bytes = context['file_obj'].tell()
+        context['file_obj'].seek(0)
+        
+        # Convert to MB
+        file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
+        
+        # Check against configured limits
+        max_size_mb = context['config'].max_file_sizes_mb.get(context['media_type_code'], 100)
+        
+        if file_size_mb > max_size_mb:
+            context['errors'].append(
+                f"File too large. Maximum size: {max_size_mb} MB, Your file: {file_size_mb} MB"
+            )
+        
+        return context
+    
+    def _calculate_file_hash(self, context: PipelineContext) -> PipelineContext:
+        """
+        Calculate SHA256 hash of the file.
+        
+        Args:
+            context: PipelineContext containing file and configuration information
+            
+        Returns:
+            Updated PipelineContext with file hash in artifacts
+        """
+        # Created by code-monkey | 2025-10-22
+        hasher = hashlib.sha256()
+        context['file_obj'].seek(0)
+        
+        # Read file in chunks to handle large files
+        while chunk := context['file_obj'].read(8192):
+            hasher.update(chunk)
+        
+        context['file_obj'].seek(0)  # Reset file pointer
+        context['artifacts']['file_hash'] = hasher.hexdigest()
+        
+        return context
+    
+    def _run_validation_pipeline(self, context: PipelineContext) -> PipelineContext:
+        """
+        Execute the validation pipeline stage.
+        
+        This method handles file validation including format checking, size limits,
+        and hash calculation. Raises ValidationError immediately if any step fails.
+        
+        Args:
+            context: PipelineContext containing file and configuration information
+            
+        Returns:
+            Updated PipelineContext with validation results
+            
+        Raises:
+            ValidationError: If any validation step fails
+        """
+        # Created by code-monkey | 2025-10-22
+        # Step 1: Validate file type
+        context = self._validate_file_type(context)
+        if context['errors']:
+            raise ValidationError(context['errors'])
+        
+        # Step 2: Validate file size
+        context = self._validate_file_size(context)
+        if context['errors']:
+            raise ValidationError(context['errors'])
+        
+        # Step 3: Calculate file hash
+        context = self._calculate_file_hash(context)
+        if context['errors']:
+            raise ValidationError(context['errors'])
+        
+        return context
+    
+    def _generate_thumbnail(self, context: PipelineContext) -> PipelineContext:
+        """
+        Generate thumbnail for image files.
+        
+        Args:
+            context: PipelineContext containing file information
+            
+        Returns:
+            Updated PipelineContext with thumbnail data in artifacts
+        """
+        # Created by code-monkey | 2025-10-22
+        if not context['config'].enable_thumbnails:
+            return context
+            
+        if context['media_type_code'] != 'image' or not PIL_AVAILABLE:
+            context['warnings'].append("Thumbnail generation skipped: not an image or PIL unavailable")
+            return context
+        
+        try:
+            # Read file data into memory for processing
+            file_data = context['file_obj'].read()
+            context['file_obj'].seek(0)  # Reset file pointer
+            
+            # Open image from bytes
+            img = Image.open(io.BytesIO(file_data))
+            
+            # Convert RGBA to RGB if necessary
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = background
+            
+            # Create thumbnail (max 300x300 maintaining aspect ratio)
+            img.thumbnail((300, 300), Image.Resampling.LANCZOS)
+            
+            # Save thumbnail to bytes
+            thumb_buffer = io.BytesIO()
+            img.save(thumb_buffer, 'JPEG', quality=85, optimize=True)
+            thumb_data = thumb_buffer.getvalue()
+            thumb_buffer.close()
+            
+            # Store thumbnail data in artifacts
+            context['artifacts']['thumbnail_data'] = thumb_data
+            
+        except Exception as e:
+            context['errors'].append(f"Thumbnail generation failed: {str(e)}")
+        
+        return context
+    
+    def _extract_metadata(self, context: PipelineContext) -> PipelineContext:
+        """
+        Extract metadata from media files.
+        
+        Args:
+            context: PipelineContext containing file information
+            
+        Returns:
+            Updated PipelineContext with metadata in artifacts
+        """
+        # Created by code-monkey | 2025-10-22
+        if not context['config'].enable_metadata_extraction:
+            return context
+        
+        metadata = {
+            'extracted_at': datetime.utcnow().isoformat()
+        }
+        
+        try:
+            if context['media_type_code'] == 'image' and PIL_AVAILABLE:
+                # Read file data into memory for processing
+                file_data = context['file_obj'].read()
+                context['file_obj'].seek(0)  # Reset file pointer
+                
+                img = Image.open(io.BytesIO(file_data))
+                metadata['width'] = img.width
+                metadata['height'] = img.height
+                metadata['format'] = img.format
+                metadata['mode'] = img.mode
+                
+                # Extract EXIF data if available
+                if hasattr(img, '_getexif') and img._getexif():
+                    exif = img._getexif()
+                    if exif:
+                        metadata['exif'] = {
+                            'make': exif.get(271),  # Camera make
+                            'model': exif.get(272),  # Camera model
+                            'datetime': exif.get(306),  # Date taken
+                            'orientation': exif.get(274)  # Orientation
+                        }
+            
+            elif context['media_type_code'] == 'video':
+                # For video metadata, we would need additional libraries like moviepy
+                # For now, add basic placeholder
+                metadata['video_info'] = 'Video metadata extraction not implemented yet'
+                context['warnings'].append("Video metadata extraction not fully implemented")
+            
+            elif context['media_type_code'] == 'audio':
+                # For audio metadata, we would need additional libraries like mutagen
+                # For now, add basic placeholder
+                metadata['audio_info'] = 'Audio metadata extraction not implemented yet'
+                context['warnings'].append("Audio metadata extraction not fully implemented")
+        
+        except Exception as e:
+            context['errors'].append(f"Metadata extraction failed: {str(e)}")
+        
+        # Store metadata in artifacts
+        context['artifacts']['metadata'] = metadata
+        
+        return context
+    
+    def _run_transform_pipeline(self, context: PipelineContext) -> PipelineContext:
+        """
+        Execute the transformation pipeline stage.
+        
+        This method handles media transformations including thumbnail generation,
+        format conversion, and metadata extraction. Updates the context with
+        transformation results.
+        
+        Args:
+            context: PipelineContext containing validated file information
+            
+        Returns:
+            Updated PipelineContext with transformation results
+            
+        Raises:
+            TransformError: If any transformation step fails
+        """
+        # Created by code-monkey | 2025-10-22
+        # Step 1: Generate thumbnail (if enabled and applicable)
+        context = self._generate_thumbnail(context)
+        
+        # Step 2: Extract metadata (if enabled)
+        context = self._extract_metadata(context)
+        
+        # Check if any errors occurred during transformations
+        if context['errors']:
+            raise TransformError(context['errors'])
+        
+        return context
+    
+    def _create_upload_directories(self, context: PipelineContext) -> Path:
+        """
+        Create the necessary directory structure for file uploads.
+        
+        Creates directories based on the current year/month within the upload folder.
+        
+        Args:
+            context: PipelineContext containing configuration information
+            
+        Returns:
+            Path object for the final upload directory
+            
+        Raises:
+            StorageError: If directory creation fails
+        """
+        # Created by code-monkey | 2025-10-22
+        try:
+            now = datetime.now()
+            year_dir = str(now.year)
+            month_dir = f"{now.month:02d}"
+            
+            # Create directory structure: upload_folder/year/month/
+            upload_path = Path(context['config'].upload_folder) / year_dir / month_dir
+            upload_path.mkdir(parents=True, exist_ok=True)
+            
+            return upload_path
+        except Exception as e:
+            context['errors'].append(f"Failed to create upload directories: {str(e)}")
+            raise StorageError(context['errors'])
+    
+    def _generate_unique_filename(self, context: PipelineContext) -> str:
+        """
+        Generate a unique filename for the media file.
+        
+        Incorporates the file hash from context artifacts to ensure uniqueness.
+        
+        Args:
+            context: PipelineContext containing file information and artifacts
+            
+        Returns:
+            Unique filename string
+            
+        Raises:
+            StorageError: If filename generation fails
+        """
+        # Created by code-monkey | 2025-10-22
+        try:
+            # Get file hash from artifacts
+            file_hash = context['artifacts'].get('file_hash')
+            if not file_hash:
+                context['errors'].append("File hash not found in artifacts")
+                raise StorageError(context['errors'])
+            
+            # Get original filename and secure it
+            original_filename = context['file_obj'].filename
+            safe_name = secure_filename(original_filename)
+            name_parts = safe_name.rsplit('.', 1)
+            
+            if len(name_parts) == 2:
+                base_name, extension = name_parts
+            else:
+                base_name = name_parts[0]
+                extension = ''
+            
+            # Use first 8 characters of hash for uniqueness
+            hash_prefix = file_hash[:8]
+            unique_name = f"{base_name}_{hash_prefix}"
+            
+            if extension:
+                unique_name = f"{unique_name}.{extension}"
+            
+            return unique_name
+        except Exception as e:
+            context['errors'].append(f"Failed to generate unique filename: {str(e)}")
+            raise StorageError(context['errors'])
+    
+    def _save_files(self, context: PipelineContext, upload_path: Path, unique_filename: str) -> None:
+        """
+        Save the main media file and thumbnail to their final destinations using atomic write pattern.
+        
+        Args:
+            context: PipelineContext containing file data and artifacts
+            upload_path: Path object for the upload directory
+            unique_filename: Unique filename for the main file
+            
+        Raises:
+            StorageError: If file saving fails
+        """
+        # Modified by code-monkey | 2025-10-22
+        temp_file_path = None
+        temp_thumb_path = None
+        
+        try:
+            # Save main media file using atomic write pattern
+            file_path = upload_path / unique_filename
+            temp_file_path = upload_path / f"{unique_filename}.tmp"
+            
+            # Save to temporary file first
+            context['file_obj'].save(str(temp_file_path))
+            
+            # Atomically rename temporary file to final destination
+            os.rename(str(temp_file_path), str(file_path))
+            temp_file_path = None  # Mark as successfully renamed
+            
+            context['artifacts']['filepath'] = str(file_path).replace('\\', '/')
+            
+            # Save thumbnail if it exists using atomic write pattern
+            thumbnail_data = context['artifacts'].get('thumbnail_data')
+            if thumbnail_data:
+                # Generate thumbnail filename
+                name_parts = unique_filename.rsplit('.', 1)
+                if len(name_parts) == 2:
+                    base_name = name_parts[0]
+                    thumbnail_name = f"{base_name}_thumb.jpg"
+                else:
+                    thumbnail_name = f"{unique_filename}_thumb.jpg"
+                
+                thumbnail_path = upload_path / thumbnail_name
+                temp_thumb_path = upload_path / f"{thumbnail_name}.tmp"
+                
+                # Save thumbnail data to temporary file first
+                with open(temp_thumb_path, 'wb') as thumb_file:
+                    thumb_file.write(thumbnail_data)
+                
+                # Atomically rename temporary thumbnail to final destination
+                os.rename(str(temp_thumb_path), str(thumbnail_path))
+                temp_thumb_path = None  # Mark as successfully renamed
+                
+                context['artifacts']['thumbnail_path'] = str(thumbnail_path).replace('\\', '/')
+            else:
+                context['artifacts']['thumbnail_path'] = None
+                
+        except Exception as e:
+            # Clean up temporary files if they exist
+            if temp_file_path and temp_file_path.exists():
+                try:
+                    temp_file_path.unlink()
+                except Exception:
+                    pass  # Ignore cleanup errors
+            
+            if temp_thumb_path and temp_thumb_path.exists():
+                try:
+                    temp_thumb_path.unlink()
+                except Exception:
+                    pass  # Ignore cleanup errors
+            
+            context['errors'].append(f"Failed to save files: {str(e)}")
+            raise StorageError(context['errors'])
+    
+    def _run_storage_pipeline(self, context: PipelineContext) -> PipelineContext:
+        """
+        Execute the storage pipeline stage.
+        
+        This method handles file storage operations including directory creation,
+        unique filename generation, and file saving. Updates the context with
+        storage results.
+        
+        Args:
+            context: PipelineContext containing transformed file information
+            
+        Returns:
+            Updated PipelineContext with storage results
+            
+        Raises:
+            StorageError: If any storage operation fails
+        """
+        # Created by code-monkey | 2025-10-22
+        try:
+            # Step 1: Create upload directories
+            upload_path = self._create_upload_directories(context)
+            
+            # Step 2: Generate unique filename
+            unique_filename = self._generate_unique_filename(context)
+            
+            # Step 3: Save files
+            self._save_files(context, upload_path, unique_filename)
+            
+            return context
+        except StorageError:
+            # Re-raise StorageError as-is
+            raise
+        except Exception as e:
+            context['errors'].append(f"Storage pipeline failed: {str(e)}")
+            raise StorageError(context['errors'])
+    
+    def process_file(self, file_obj: FileStorage, user_id: int, media_type_code: str) -> CoreResult:
+        """
+        Main orchestrator method for processing media files.
+        
+        This method coordinates the complete media file processing workflow by
+        initializing the pipeline context and executing the validation, transformation,
+        and storage pipelines in sequence.
+        
+        Args:
+            file_obj: The uploaded file object from werkzeug.datastructures.FileStorage
+            user_id: ID of the user performing the upload
+            media_type_code: String code indicating the media type (eg, 'image', 'video')
+            
+        Returns:
+            CoreResult containing processing outcome and relevant data
+        """
+        # Created by code-monkey | 2025-10-22
+        # Initialize pipeline context
+        context = PipelineContext(
+            file_obj=file_obj,
+            user_id=user_id,
+            media_type_code=media_type_code,
+            config=self.config,
+            artifacts={},
+            errors=[],
+            warnings=[]
+        )
+        
+        try:
+            # Execute validation pipeline
+            context = self._run_validation_pipeline(context)
+            
+            # Execute transform pipeline
+            context = self._run_transform_pipeline(context)
+            
+            # Execute storage pipeline
+            context = self._run_storage_pipeline(context)
+            
+            # Return success result with artifacts
+            return CoreResult(
+                ok=True,
+                data=context['artifacts'],
+                errors=[],
+                warnings=context['warnings'],
+                code="SUCCESS"
+            )
+            
+        except ValidationError as e:
+            # Return failure result for validation errors
+            return CoreResult(
+                ok=False,
+                data={},
+                errors=e.message if isinstance(e.message, list) else [e.message],
+                warnings=context['warnings'],
+                code="VALIDATION_ERROR"
+            )
+            
+        except TransformError as e:
+            # Return failure result for transform errors
+            return CoreResult(
+                ok=False,
+                data={},
+                errors=e.message if isinstance(e.message, list) else [e.message],
+                warnings=context['warnings'],
+                code="TRANSFORM_ERROR"
+            )
+            
+        except StorageError as e:
+            # Return failure result for storage errors
+            return CoreResult(
+                ok=False,
+                data={},
+                errors=e.message if isinstance(e.message, list) else [e.message],
+                warnings=context['warnings'],
+                code="STORAGE_ERROR"
+            )
+    
+    def delete_media_files(self, media_records) -> CoreResult:
+        """
+        Delete media files from storage.
+        
+        This method handles the deletion of media files including main files,
+        thumbnails, and associated artifacts from the storage system.
+        
+        Args:
+            media_records: List or iterable of media record objects containing file paths
+            
+        Returns:
+            CoreResult containing deletion outcome and relevant data
+        """
+        # Placeholder implementation - will be implemented in subsequent tasks
+        return CoreResult(
+            ok=True,
+            data={"message": "MediaFileHandler.delete_media_files placeholder implementation"},
+            errors=[],
+            warnings=[],
+            code="PLACEHOLDER"
+        )

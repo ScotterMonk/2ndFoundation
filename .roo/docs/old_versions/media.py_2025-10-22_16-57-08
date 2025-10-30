@@ -1,0 +1,135 @@
+"""
+Media utility functions for MediaShare Flask application.
+
+This module contains Flask-aware presentation utilities that wrap the core media
+processing logic from media_core.py. These functions provide backward-compatible
+interfaces for existing route code while delegating to the new pipeline system.
+"""
+
+from flask import current_app
+from werkzeug.datastructures import FileStorage
+from typing import List, Dict, Tuple
+
+# Import core media processing components
+from .media_core import MediaFileHandler, MediaFileConfig
+
+
+# Created by code-monkey | 2025-10-22
+def process_uploaded_files_new(files: List[FileStorage], user_id: int, media_type_code: str) -> Tuple[List[Dict], List[str]]:
+    """
+    Backward-compatible adapter function for processing uploaded files using the new MediaFileHandler.
+    
+    This function wraps the new MediaFileHandler pipeline while maintaining the same interface
+    as the original process_uploaded_files function. It translates Flask configuration
+    into MediaFileConfig and converts CoreResult back to the expected tuple format.
+    
+    Args:
+        files: List of FileStorage objects to process
+        user_id: ID of the user uploading the files
+        media_type_code: String code indicating the media type (eg, 'image', 'video')
+    
+    Returns:
+        Tuple of (successful_uploads, error_messages) matching the original function signature
+    """
+    # Create MediaFileConfig from Flask app configuration
+    config = MediaFileConfig(
+        upload_folder=current_app.config.get('UPLOAD_FOLDER', 'static/uploads/media'),
+        allowed_extensions={
+            'image': {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'},
+            'video': {'.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.webm'},
+            'audio': {'.mp3', '.wav', '.flac', '.aac', '.ogg', '.wma', '.m4a'},
+            'document': {'.pdf', '.doc', '.docx', '.txt', '.rtf', '.odt', '.md'}
+        },
+        max_file_sizes_mb=current_app.config.get('MAX_FILE_SIZES_MB', {
+            'image': 50,
+            'video': 2000,
+            'audio': 200,
+            'document': 100
+        }),
+        enable_thumbnails=current_app.config.get('ENABLE_THUMBNAILS', True),
+        enable_metadata_extraction=current_app.config.get('ENABLE_METADATA_EXTRACTION', True),
+        enable_imdb=current_app.config.get('ENABLE_IMDB', True),
+        enable_tvdb=current_app.config.get('ENABLE_TVDB', False),
+        enable_tmdb=current_app.config.get('ENABLE_TMDB', False)
+    )
+    
+    # Create MediaFileHandler instance
+    handler = MediaFileHandler(config)
+    
+    successful_uploads = []
+    error_messages = []
+    
+    # Process each file using the new handler
+    for file_obj in files:
+        try:
+            # Call the new handler's process_file method
+            result = handler.process_file(file_obj, user_id, media_type_code)
+            
+            # Check if processing was successful
+            if result['ok']:
+                # Transform CoreResult data to match expected format
+                file_info = result['data'].copy()
+                
+                # Add original filename if not present
+                if 'filename_original' not in file_info:
+                    file_info['filename_original'] = file_obj.filename
+                
+                # Convert data to match original format expected by routes
+                transformed_info = {
+                    'filename_original': file_info.get('filename_original', file_obj.filename),
+                    'filename_stored': file_info.get('filepath', '').split('/')[-1] if file_info.get('filepath') else '',
+                    'file_path': file_info.get('filepath', ''),
+                    'file_size_bytes': 0,  # Not available in new pipeline artifacts
+                    'file_size_mb': 0.0,  # Not available in new pipeline artifacts
+                    'file_hash': file_info.get('file_hash', ''),
+                    'mime_type': 'application/octet-stream',  # Default, could be enhanced
+                    'thumbnail_path': file_info.get('thumbnail_path'),
+                    'media_metadata': file_info.get('metadata', {})
+                }
+                
+                successful_uploads.append(transformed_info)
+                
+                # Log any warnings from the pipeline
+                if result.get('warnings'):
+                    for warning in result['warnings']:
+                        current_app.logger.warning(f"Media processing warning for {file_obj.filename}: {warning}")
+            else:
+                # Handle processing errors
+                for error in result.get('errors', ['Unknown error']):
+                    error_messages.append(f"{file_obj.filename}: {error}")
+                    current_app.logger.error(f"Media processing error for {file_obj.filename}: {error}")
+                
+        except Exception as e:
+            # Handle unexpected exceptions
+            error_msg = f"{file_obj.filename}: {str(e)}"
+            error_messages.append(error_msg)
+            current_app.logger.error(f"Unexpected error processing file {file_obj.filename}: {str(e)}")
+    
+    return successful_uploads, error_messages
+
+
+# Modified by code-monkey | 2025-10-22
+def process_uploaded_files(files: List[FileStorage], user_id: int, media_type_code: str) -> Tuple[List[Dict], List[str]]:
+    """
+    Process uploaded files using either the new or original handler based on feature flag.
+    
+    This function serves as a router that checks the MEDIA_USE_NEW_HANDLER configuration
+    flag and directs execution to the appropriate handler. When the flag is True, it uses
+    the new MediaFileHandler pipeline. When False, it uses the original core function.
+    
+    Args:
+        files: List of FileStorage objects to process
+        user_id: ID of the user uploading the files
+        media_type_code: String code indicating the media type (eg, 'image', 'video')
+    
+    Returns:
+        Tuple of (successful_uploads, error_messages) matching the original function signature
+    """
+    # Check the feature flag to determine which handler to use
+    if current_app.config.get('MEDIA_USE_NEW_HANDLER', False):
+        # Use the new handler
+        return process_uploaded_files_new(files, user_id, media_type_code)
+    else:
+        # Use the original core function
+        from .media_core import process_uploaded_files as process_uploaded_files_core
+        return process_uploaded_files_core(files, user_id, media_type_code)

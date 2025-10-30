@@ -1,0 +1,297 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="flex items-start justify-center bg-neutral-50 p-4">
+    <div class="auth-form-wrapper" style="max-width: 1200px;">
+        <div class="card">
+            <div class="card-header">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2>IMDb Search Results</h2>
+                        <p class="text-secondary" style="margin-bottom:0;">
+                            Found {{ result_count }} result{{ 's' if result_count != 1 else '' }} for "{{ media_title
+                            }}"
+                        </p>
+                    </div>
+                    <a href="{{ url_for('admin.media_edit', media_id=media.id) }}" class="btn">
+                        Back to Edit
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if search_results %}
+                <div class="border border-light rounded-lg bg-neutral-50 overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-light bg-primary-50">
+                                <th class="text-left">
+                                    <a href="#" class="text-primary hover:underline sort-link" data-sort="title">
+                                        Title<span class="sort-indicator"></span>
+                                    </a>
+                                </th>
+                                <th class="text-center">Thumbnail</th>
+                                <th class="text-left">Description</th>
+                                <th class="text-center">
+                                    <a href="#" class="text-primary hover:underline sort-link" data-sort="type">
+                                        Type<span class="sort-indicator"></span>
+                                    </a>
+                                </th>
+                                <th class="text-center">
+                                    <a href="#" class="text-primary hover:underline sort-link" data-sort="year">
+                                        Released<span class="sort-indicator"></span>
+                                    </a>
+                                </th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in search_results %}
+                            <tr
+                                class="{% if loop.index is divisibleby(2) %}bg-neutral-200{% else %}bg-white{% endif %} hover:bg-primary-50">
+                                <td class="font-semibold text-base aligntop">{{ result.title }}</td>
+                                <td class="text-center aligntop">
+                                    {% if result.image_url %}
+                                    <img src="{{ result.image_url }}" alt="{{ result.title }}"
+                                        style="max-width: 250px; max-height:250px; display: inline-block;">
+                                    {% endif %}
+                                </td>
+                                <td class="text-base aligntop">{{ result.description[:400] if result.description else '—' }}{% if result.description and result.description|length > 120 %}...{% endif %}
+<div class="text-xs text-secondary mt-1">IMDb ID: {{ result.imdb_id }}</div></td>
+                                <td class="text-center aligntop">{{ imdb_type_mapping.get(result.type|lower, result.type|title) if result.type else '—' }}</td>
+                                <td class="text-center aligntop">{{ result.year or '—' }}</td>
+                                <td class="text-center aligntop">
+                                    <button class="btn-med select-imdb-btn" data-imdb-id="{{ result.imdb_id }}"
+                                        data-title="{{ result.title }}" title="Select this result">
+                                        Select
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="text-4xl mb-4">🔍</div>
+                    <h3 class="text-xl font-semibold mb-2">No Results Found</h3>
+                    <p class="text-secondary mb-4">
+                        No IMDb results were found for "{{ media_title }}".
+                    </p>
+                    <a href="{{ url_for('admin.media_edit', media_id=media.id) }}" class="btn">
+                        Back to Edit
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Table sorting functionality
+        let currentSort = null;
+        let currentDirection = 'asc';
+        
+        const sortLinks = document.querySelectorAll('.sort-link');
+        const tbody = document.querySelector('tbody');
+        
+        sortLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sortField = this.dataset.sort;
+                
+                // Toggle direction if clicking same column
+                if (currentSort === sortField) {
+                    currentDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentDirection = 'asc';
+                    currentSort = sortField;
+                }
+                
+                // Update sort indicators
+                document.querySelectorAll('.sort-indicator').forEach(indicator => {
+                    indicator.textContent = '';
+                });
+                this.querySelector('.sort-indicator').textContent = currentDirection === 'asc' ? ' ▲' : ' ▼';
+                
+                // Sort the table
+                sortTable(sortField, currentDirection);
+            });
+        });
+        
+        function sortTable(field, direction) {
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            rows.sort((a, b) => {
+                let aVal, bVal;
+                
+                if (field === 'title') {
+                    aVal = a.cells[0].textContent.trim().toLowerCase();
+                    bVal = b.cells[0].textContent.trim().toLowerCase();
+                } else if (field === 'type') {
+                    aVal = a.cells[3].textContent.trim().toLowerCase();
+                    bVal = b.cells[3].textContent.trim().toLowerCase();
+                } else if (field === 'year') {
+                    aVal = a.cells[4].textContent.trim();
+                    bVal = b.cells[4].textContent.trim();
+                    // Handle '—' as empty/null
+                    aVal = aVal === '—' ? '' : aVal;
+                    bVal = bVal === '—' ? '' : bVal;
+                    // Convert to numbers for proper year sorting
+                    aVal = aVal ? parseInt(aVal) : 0;
+                    bVal = bVal ? parseInt(bVal) : 0;
+                }
+                
+                if (direction === 'asc') {
+                    return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+                } else {
+                    return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+                }
+            });
+            
+            // Re-append rows in sorted order and update alternating backgrounds
+            rows.forEach((row, index) => {
+                tbody.appendChild(row);
+                // Update alternating row colors
+                if (index % 2 === 0) {
+                    row.className = 'border-b border-light bg-white hover:bg-primary-50';
+                } else {
+                    row.className = 'border-b border-light bg-neutral-50 hover:bg-primary-50';
+                }
+            });
+        }
+        
+        // Handle IMDb result selection
+        const selectButtons = document.querySelectorAll('.select-imdb-btn');
+
+        // Helper function to get CSRF token
+        function getCsrfToken() {
+            const input = document.querySelector('input[name="csrf_token"]');
+            if (input && input.value) return input.value;
+            const m = document.cookie && document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+            return m ? decodeURIComponent(m[1]) : '';
+        }
+
+        // Helper function to show toast notification
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.position = 'fixed';
+            toast.style.top = '16px';
+            toast.style.right = '16px';
+            toast.style.zIndex = '9999';
+            toast.style.padding = '12px 16px';
+            toast.style.borderRadius = '8px';
+            toast.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+            toast.style.color = isError ? '#fff' : '#0f5132';
+            toast.style.background = isError ? '#dc3545' : '#d1e7dd';
+            toast.style.border = isError ? '1px solid #b02a37' : '1px solid #badbcc';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 150ms ease';
+            document.body.appendChild(toast);
+            requestAnimationFrame(() => { toast.style.opacity = '1'; });
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 3600);
+            }, 3000);
+        }
+
+        // Helper function to disable all select buttons
+        function disableAllSelectButtons() {
+            selectButtons.forEach(button => {
+                button.classList.add('btn-disabled');
+            });
+        }
+
+        // Helper function to enable all select buttons
+        function enableAllSelectButtons() {
+            selectButtons.forEach(button => {
+                button.classList.remove('btn-disabled');
+            });
+        }
+
+        // Store IMDb data in sessionStorage for media_edit page
+        function storeImdbDataInSession(data) {
+            try {
+                // Add media_id to the stored data for validation
+                const dataWithMediaId = {
+                    ...data,
+                    media_id: {{ media.id }}
+                };
+    sessionStorage.setItem('imdb_selection_data', JSON.stringify(dataWithMediaId));
+    sessionStorage.setItem('imdb_selection_timestamp', Date.now().toString());
+    } catch (error) {
+        console.warn('Failed to store IMDb data in session storage:', error);
+    }
+    }
+
+    selectButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const imdbId = this.dataset.imdbId;
+            const title = this.dataset.title;
+            const mediaId = {{ media.id }};
+
+        // Store original button text for potential restoration
+        const originalText = this.textContent;
+
+        // Disable all buttons to prevent multiple selections
+        disableAllSelectButtons();
+
+        // Show loading state on clicked button
+        this.textContent = 'Loading...';
+
+        // Show loading toast
+        showToast('Fetching IMDb data...', false);
+
+        // Make AJAX request to select the IMDb result
+        fetch(`/admin/media/${mediaId}/pull-imdb/select/${imdbId}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCsrfToken(),
+                'X-CSRF-Token': getCsrfToken()
+            }
+        })
+            .then(response => {
+                // Check if response is ok before parsing JSON
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Store the IMDb data in sessionStorage for the media_edit page
+                    storeImdbDataInSession(data);
+
+                    // Show success message
+                    showToast('IMDb data successfully imported!', false);
+
+                    // Brief delay to show success message before redirect
+                    setTimeout(() => {
+                        // Redirect back to media edit page with success parameters
+                        window.location.href = `/admin/media_edit/${mediaId}?imdb_success=true&message=IMDb data successfully imported`;
+                    }, 500);
+                } else {
+                    // Handle error response
+                    throw new Error(data.error || 'Failed to select IMDb result');
+                }
+            })
+            .catch(error => {
+                console.error('Error selecting IMDb result:', error);
+
+                // Show error toast
+                showToast(`Error: ${error.message || 'Failed to fetch IMDb data'}`, true);
+
+                // Restore button state
+                this.textContent = originalText;
+
+                // Re-enable all buttons
+                enableAllSelectButtons();
+            });
+    });
+    });
+});
+</script>
+
+{% endblock %}

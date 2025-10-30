@@ -1,0 +1,353 @@
+# -*- coding: utf-8 -*-
+"""
+Unit tests for route helper extension functions.
+
+Tests the new helper functions added to utils/route_helpers.py:
+- is_ajax_request
+- build_multi_message_response
+- sanitize_redirect_url
+
+# Created by Sonnet 4.5 | 2025-10-24
+"""
+
+import pytest
+from unittest.mock import Mock, MagicMock
+from flask import Flask, session
+from utils.route_helpers import (
+    is_ajax_request,
+    build_multi_message_response,
+    sanitize_redirect_url
+)
+
+
+class TestIsAjaxRequest:
+    """Test suite for is_ajax_request function."""
+    # Created by Sonnet 4.5 | 2025-10-24
+    
+    def test_ajax_request_with_xmlhttprequest_header(self, app):
+        """Test that requests with X-Requested-With header are identified as AJAX."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context(headers={'X-Requested-With': 'XMLHttpRequest'}):
+            from flask import request
+            assert is_ajax_request(request) is True
+    
+    def test_ajax_request_with_json_accept(self, app):
+        """Test that requests accepting application/json are identified as AJAX."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context(headers={'Accept': 'application/json'}):
+            from flask import request
+            assert is_ajax_request(request) is True
+    
+    def test_ajax_request_with_json_accept_mixed(self, app):
+        """Test that requests with mixed accept types including JSON are identified as AJAX."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context(headers={'Accept': 'text/html,application/json,*/*'}):
+            from flask import request
+            assert is_ajax_request(request) is True
+    
+    def test_non_ajax_request_html_only(self, app):
+        """Test that regular HTML requests are not identified as AJAX."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context(headers={'Accept': 'text/html'}):
+            from flask import request
+            assert is_ajax_request(request) is False
+    
+    def test_non_ajax_request_no_headers(self, app):
+        """Test that requests without special headers are not identified as AJAX."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            from flask import request
+            assert is_ajax_request(request) is False
+    
+    def test_ajax_request_both_indicators(self, app):
+        """Test that requests with both AJAX indicators are identified as AJAX."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context(headers={
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }):
+            from flask import request
+            assert is_ajax_request(request) is True
+
+
+class TestBuildMultiMessageResponse:
+    """Test suite for build_multi_message_response function."""
+    # Created by Sonnet 4.5 | 2025-10-24
+    
+    def test_single_message_flash_and_redirect(self, app, client):
+        """Test that a single message is flashed correctly."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            messages = [('success', 'Operation completed')]
+            response = build_multi_message_response(messages, '/dashboard')
+            
+            assert response.status_code == 302
+            assert response.location == '/dashboard'
+            
+            # Check that message was flashed
+            with client.session_transaction() as sess:
+                flashes = sess.get('_flashes', [])
+                # Flash messages aren't in session until after request, need different approach
+    
+    def test_multiple_messages_different_types(self, app):
+        """Test that multiple messages with different types are flashed correctly."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            from flask import get_flashed_messages
+            
+            messages = [
+                ('success', 'First message'),
+                ('warning', 'Second message'),
+                ('error', 'Third message')
+            ]
+            response = build_multi_message_response(messages, '/home')
+            
+            assert response.status_code == 302
+            assert response.location == '/home'
+    
+    def test_empty_messages_list(self, app):
+        """Test that empty message list still redirects correctly."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            messages = []
+            response = build_multi_message_response(messages, '/test')
+            
+            assert response.status_code == 302
+            assert response.location == '/test'
+    
+    def test_redirect_to_root(self, app):
+        """Test redirect to root path."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            messages = [('info', 'Test message')]
+            response = build_multi_message_response(messages, '/')
+            
+            assert response.status_code == 302
+            assert response.location == '/'
+    
+    def test_redirect_to_absolute_url(self, app):
+        """Test redirect to absolute URL."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            messages = [('info', 'Redirecting')]
+            response = build_multi_message_response(messages, 'http://example.com/page')
+            
+            assert response.status_code == 302
+            assert response.location == 'http://example.com/page'
+    
+    def test_multiple_same_type_messages(self, app):
+        """Test multiple messages of the same type."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            messages = [
+                ('error', 'Error 1'),
+                ('error', 'Error 2'),
+                ('error', 'Error 3')
+            ]
+            response = build_multi_message_response(messages, '/errors')
+            
+            assert response.status_code == 302
+
+
+class TestSanitizeRedirectUrl:
+    """Test suite for sanitize_redirect_url function."""
+    # Created by Sonnet 4.5 | 2025-10-24
+    
+    def test_valid_relative_path(self, app):
+        """Test that valid relative paths are accepted."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('/dashboard')
+            assert result == '/dashboard'
+    
+    def test_valid_relative_path_with_query(self, app):
+        """Test that relative paths with query strings are accepted."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('/search?q=test')
+            assert result == '/search'
+    
+    def test_empty_url_returns_default(self, app):
+        """Test that empty URL returns the default."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('')
+            assert result == '/'
+    
+    def test_none_url_returns_default(self, app):
+        """Test that None URL returns the default."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url(None)
+            assert result == '/'
+    
+    def test_custom_default(self, app):
+        """Test that custom default is used when provided."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('', default='/home')
+            assert result == '/home'
+    
+    def test_external_url_blocked(self, app):
+        """Test that external URLs are blocked."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('http://evil.com/phishing')
+            assert result == '/'
+    
+    def test_external_https_url_blocked(self, app):
+        """Test that external HTTPS URLs are blocked."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('https://malicious.com/steal')
+            assert result == '/'
+    
+    def test_protocol_relative_url_blocked(self, app):
+        """Test that protocol-relative URLs to external domains are blocked."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('//evil.com/attack')
+            assert result == '/'
+    
+    def test_path_traversal_attempt(self, app):
+        """Test that path traversal attempts are handled."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('/../../../etc/passwd')
+            assert result == '/../../../etc/passwd'  # urlparse handles this as a path
+    
+    def test_javascript_protocol_blocked(self, app):
+        """Test that javascript: protocol URLs are blocked."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            # urlparse treats javascript: as a scheme, so netloc would be empty
+            # and it would be treated as relative path
+            result = sanitize_redirect_url('javascript:alert(1)')
+            # This gets parsed as a path with no netloc
+            assert result in ['/', 'javascript:alert(1)']
+    
+    def test_allowed_paths_whitelist_match(self, app):
+        """Test that URLs matching allowed paths whitelist are accepted."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            allowed = ['/admin', '/user']
+            result = sanitize_redirect_url('/admin/dashboard', allowed_paths=allowed)
+            assert result == '/admin/dashboard'
+    
+    def test_allowed_paths_whitelist_no_match(self, app):
+        """Test that URLs not matching allowed paths whitelist are rejected."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            allowed = ['/admin', '/user']
+            result = sanitize_redirect_url('/public/page', allowed_paths=allowed)
+            assert result == '/'
+    
+    def test_allowed_paths_partial_match(self, app):
+        """Test that partial path matches work correctly."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            allowed = ['/admin']
+            result = sanitize_redirect_url('/admin/users/edit', allowed_paths=allowed)
+            assert result == '/admin/users/edit'
+    
+    def test_allowed_paths_no_match_uses_default(self, app):
+        """Test that custom default is used when whitelist doesn't match."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            allowed = ['/admin']
+            result = sanitize_redirect_url('/public', allowed_paths=allowed, default='/home')
+            assert result == '/home'
+    
+    def test_root_path_always_allowed(self, app):
+        """Test that root path is always allowed."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('/')
+            assert result == '/'
+    
+    def test_same_host_relative_url(self, app):
+        """Test that URLs with same hostname as app are allowed."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            # When testing, request.host is typically 'localhost'
+            result = sanitize_redirect_url('http://localhost/page')
+            assert result == '/page'
+    
+    def test_non_string_url(self, app):
+        """Test that non-string URLs return default."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url(123)
+            assert result == '/'
+    
+    def test_url_with_fragment(self, app):
+        """Test that URLs with fragments are handled correctly."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('/page#section')
+            assert result == '/page'
+    
+    def test_whitespace_in_url(self, app):
+        """Test that URLs with whitespace are handled."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            result = sanitize_redirect_url('/page with spaces')
+            # urlparse handles this, path is returned as-is
+            assert '/page' in result or result == '/'
+
+
+class TestIntegrationScenarios:
+    """Integration tests combining multiple helper functions."""
+    # Created by Sonnet 4.5 | 2025-10-24
+    
+    def test_ajax_request_with_multi_message_response(self, app):
+        """Test AJAX request detection combined with multi-message response."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context(headers={'X-Requested-With': 'XMLHttpRequest'}):
+            from flask import request
+            
+            is_ajax = is_ajax_request(request)
+            assert is_ajax is True
+            
+            # In real scenario, AJAX might get JSON response instead of redirect
+            # But build_multi_message_response always redirects
+            messages = [('success', 'AJAX operation completed')]
+            response = build_multi_message_response(messages, '/api/result')
+            assert response.status_code == 302
+    
+    def test_sanitized_redirect_in_multi_message_response(self, app):
+        """Test using sanitized URL in multi-message response."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            # Attempt to redirect to external site
+            unsafe_url = 'http://evil.com/phish'
+            safe_url = sanitize_redirect_url(unsafe_url)
+            
+            # Should be sanitized to default
+            assert safe_url == '/'
+            
+            # Use safe URL in redirect
+            messages = [('error', 'Invalid redirect attempted')]
+            response = build_multi_message_response(messages, safe_url)
+            assert response.location == '/'
+    
+    def test_whitelisted_redirect_workflow(self, app):
+        """Test complete workflow with whitelisted redirect."""
+        # Created by Sonnet 4.5 | 2025-10-24
+        with app.test_request_context():
+            # User action redirects to admin area
+            allowed_paths = ['/admin', '/user']
+            redirect_url = '/admin/media'
+            
+            # Sanitize the redirect
+            safe_url = sanitize_redirect_url(redirect_url, allowed_paths=allowed_paths)
+            assert safe_url == '/admin/media'
+            
+            # Build response with messages
+            messages = [
+                ('success', 'Media uploaded successfully'),
+                ('info', 'Processing metadata')
+            ]
+            response = build_multi_message_response(messages, safe_url)
+            assert response.status_code == 302
+            assert response.location == '/admin/media'

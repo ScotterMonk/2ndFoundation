@@ -1,0 +1,108 @@
+# Created by Gemini 2.5 Pro | 2025-10-23
+import logging
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+import unicodedata
+
+from utils.media_core import CoreResult
+
+logger = logging.getLogger(__name__)
+
+def process_media_associations(
+    db_session: Session,
+    media_id: int,
+    csv_string: str,
+    association_model: type,
+    entity_model: type,
+    entity_field: str = 'name',
+    create_if_missing: bool = True
+):
+    """
+    Generic processor for media associations (genres, directors, performers).
+
+    Args:
+        db_session: The SQLAlchemy session object.
+        media_id: The ID of the media item to associate with.
+        csv_string: A comma-separated string of entity names.
+        association_model: The association table model (eg, MediaGenre).
+        entity_model: The entity table model (eg, Genre).
+        entity_field: The field on the entity model to match against (default 'name').
+        create_if_missing: Whether to create new entities if they don't exist.
+
+    Returns:
+        CoreResult with {ok, data: {created, skipped, existing, entity_ids}, errors, code}
+    """
+    if not csv_string or not csv_string.strip():
+        return CoreResult(ok=True, data={'created': [], 'skipped': [], 'existing': [], 'entity_ids': []})
+
+    entity_names = {unicodedata.normalize('NFC', name.strip()) for name in csv_string.split(',') if name.strip()}
+    
+    created_entities = []
+    skipped_entities = []
+    existing_entities = []
+    all_entity_ids = set()
+    errors = []
+
+    try:
+        with db_session.begin_nested():
+            # Fetch existing entities in one query
+            existing_db_entities = db_session.query(entity_model).filter(getattr(entity_model, entity_field).in_(entity_names)).all()
+            existing_map = {getattr(entity, entity_field): entity for entity in existing_db_entities}
+            existing_entities = list(existing_map.keys())
+            all_entity_ids.update(entity.id for entity in existing_db_entities)
+
+            # Determine which entities need to be created
+            names_to_create = entity_names - set(existing_map.keys())
+
+            if names_to_create:
+                if create_if_missing:
+                    for name in names_to_create:
+                        new_entity = entity_model(**{entity_field: name})
+                        db_session.add(new_entity)
+                        created_entities.append(name)
+                    # Flush to get IDs for the new entities
+                    db_session.flush()
+                    
+                    # Add new entity IDs to the set
+                    newly_created_entities = db_session.query(entity_model).filter(getattr(entity_model, entity_field).in_(names_to_create)).all()
+                    all_entity_ids.update(entity.id for entity in newly_created_entities)
+                else:
+                    skipped_entities.extend(list(names_to_create))
+
+            # Clear existing associations for this media item
+            media_id_field = 'media_id' # Assuming consistent naming
+            db_session.query(association_model).filter(getattr(association_model, media_id_field) == media_id).delete(synchronize_session=False)
+
+            # Create new associations
+            entity_id_field = 'genre_id' # Placeholder, needs to be dynamic
+            if 'genre' in association_model.__name__.lower():
+                entity_id_field = 'genre_id'
+            elif 'director' in association_model.__name__.lower():
+                entity_id_field = 'director_id'
+            elif 'performer' in association_model.__name__.lower():
+                entity_id_field = 'performer_id'
+
+            for entity_id in all_entity_ids:
+                new_association = association_model(**{media_id_field: media_id, entity_id_field: entity_id})
+                db_session.add(new_association)
+
+        db_session.commit()
+        return CoreResult(
+            ok=True,
+            data={
+                'created': created_entities,
+                'skipped': skipped_entities,
+                'existing': existing_entities,
+                'entity_ids': list(all_entity_ids)
+            }
+        )
+    except SQLAlchemyError as e:
+        db_session.rollback()
+        logger.error(f"Database error in process_media_associations: {str(e)}", exc_info=True)
+        errors.append(f"Database error: {str(e)}")
+        return CoreResult(ok=False, errors=errors, code="DB_ERROR")
+    except Exception as e:
+        db_session.rollback()
+        logger.error(f"Unexpected error in process_media_associations: {str(e)}", exc_info=True)
+        errors.append(f"An unexpected error occurred: {str(e)}")
+        return CoreResult(ok=False, errors=errors, code="UNEXPECTED_ERROR")

@@ -1,0 +1,67 @@
+# Created by Gemini 2.5 Pro | 2025-10-23
+import logging
+from typing import List, Dict, Any
+from sqlalchemy.orm import Session, Query
+from sqlalchemy import or_
+
+from models.models_user import User, UserType
+
+logger = logging.getLogger(__name__)
+
+def build_user_search_query(
+    db_session: Session,
+    search_term: str,
+    active_only: bool = True,
+    resellers_only: bool = False
+) -> Query:
+    """
+    Builds a SQLAlchemy query for searching users with various filters.
+
+    Args:
+        db_session: The SQLAlchemy session object.
+        search_term: The term to search for in username and email.
+        active_only: If True, only include active users.
+        resellers_only: If True, only include users of the 'reseller' type.
+
+    Returns:
+        A SQLAlchemy Query object.
+    """
+    query = db_session.query(User)
+
+    if active_only:
+        query = query.filter(User.is_active == True)
+
+    if resellers_only:
+        query = query.join(User.user_type).filter(UserType.name == 'reseller')
+
+    if search_term:
+        like_pattern = f"%{search_term}%"
+        query = query.filter(
+            or_(
+                User.username.ilike(like_pattern),
+                User.email.ilike(like_pattern)
+            )
+        )
+
+    return query
+
+def prepare_user_list_data(users: List[User]) -> List[Dict[str, Any]]:
+    """
+    Converts a list of User ORM objects to a list of dictionaries for presentation.
+
+    Args:
+        users: A list of User ORM objects.
+
+    Returns:
+        A list of dictionaries, each representing a user.
+    """
+    user_list = []
+    for user in users:
+        user_list.append({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_active': user.is_active,
+            'is_reseller': user.user_type.name == 'reseller' if user.user_type else False
+        })
+    return user_list

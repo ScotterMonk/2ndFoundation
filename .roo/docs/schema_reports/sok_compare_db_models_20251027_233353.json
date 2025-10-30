@@ -1,0 +1,3127 @@
+{
+  "metadata": {
+    "generator": "Schema Inspector CLI",
+    "timestamp": "2025-10-27T23:33:53.625121+00:00",
+    "command": "compare-db-models",
+    "sources": {
+      "introspect": ".roo/docs/schema_reports\\sok_introspect_20251027_174042.json",
+      "models": [
+        "models\\models_interaction.py",
+        "models\\models_media.py",
+        "models\\models_payment.py",
+        "models\\models_referral.py",
+        "models\\models_reseller.py",
+        "models\\models_support.py",
+        "models\\models_user.py"
+      ]
+    }
+  },
+  "discrepancies": {
+    "support_tickets": {
+      "type_mismatches": [
+        {
+          "column": "priority",
+          "schema_type": "VARCHAR(10)",
+          "model_type": "String"
+        },
+        {
+          "column": "assigned_to_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "category",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "subject",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "files": {
+      "type_mismatches": [
+        {
+          "column": "external_id",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "content_type",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "label",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "original_filename",
+          "schema_type": "VARCHAR(500)",
+          "model_type": "String"
+        },
+        {
+          "column": "path",
+          "schema_type": "VARCHAR(500)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "episode_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "referral_codes": {
+      "type_mismatches": [
+        {
+          "column": "current_uses",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "reward_type",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "code",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "reward_value",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "referrer_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "usage_limit",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "referred_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media_quality_levels": {
+      "type_mismatches": [
+        {
+          "column": "codec",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "bitrate_kbps",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "quality_name",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "file_path",
+          "schema_type": "VARCHAR(1000)",
+          "model_type": "String"
+        },
+        {
+          "column": "resolution_height",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "processing_status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "resolution_width",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "playlists": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "thumbnail_url",
+          "schema_type": "VARCHAR(1000)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users": {
+      "type_mismatches": [
+        {
+          "column": "pw_hashed",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "failed_login_attempts",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name_last",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "email",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "parent_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "postal_zip",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_type_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "address_2",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "timezone",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "password_reset_token",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "avatar_url",
+          "schema_type": "VARCHAR(500)",
+          "model_type": "String"
+        },
+        {
+          "column": "language_preference",
+          "schema_type": "VARCHAR(10)",
+          "model_type": "String"
+        },
+        {
+          "column": "phone",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "notification_settings",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "user_score_limit",
+          "schema_type": "VARCHAR(10)",
+          "model_type": "String"
+        },
+        {
+          "column": "city",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "payee_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name_display",
+          "schema_type": "VARCHAR(150)",
+          "model_type": "String"
+        },
+        {
+          "column": "referred_by_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "address_1",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "country",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "total_storage_used_mb",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "username",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "credit_balance",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name_first",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "preferences",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "state",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        }
+      ]
+    },
+    "users_favorites": {
+      "type_mismatches": [
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "favorite_type",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users_types": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "code",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "max_storage_mb",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "max_uploads",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "directors": {
+      "type_mismatches": [
+        {
+          "column": "gender",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "tmdb_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "genres": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users_ratings": {
+      "type_mismatches": [
+        {
+          "column": "user_score",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users_faves_directors": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "weight",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "director_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "user_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "playlists_media_items": {
+      "type_mismatches": [
+        {
+          "column": "sort_order",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "added_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "playlist_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users_sessions": {
+      "type_mismatches": [
+        {
+          "column": "device_info",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "session_token",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        }
+      ]
+    },
+    "notifications": {
+      "type_mismatches": [
+        {
+          "column": "title",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "priority",
+          "schema_type": "VARCHAR(10)",
+          "model_type": "String"
+        },
+        {
+          "column": "notification_type",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "action_url",
+          "schema_type": "VARCHAR(500)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "_metadata",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ],
+      "nullable_mismatches": [
+        {
+          "column": "_metadata",
+          "schema_nullable": false,
+          "model_nullable": true
+        }
+      ]
+    },
+    "subscriptions": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "subscriptions_plan_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users_media_history": {
+      "type_mismatches": [
+        {
+          "column": "playback_position_seconds",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "device_type",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "ip_address",
+          "schema_type": "INET",
+          "model_type": "String"
+        },
+        {
+          "column": "device_info",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "credits_spent",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "completion_percentage",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "quality_level",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "action_type",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        }
+      ]
+    },
+    "payments": {
+      "type_mismatches": [
+        {
+          "column": "credits_purchased",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "payment_status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "credit_package_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "payment_method_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "currency",
+          "schema_type": "VARCHAR(3)",
+          "model_type": "String"
+        },
+        {
+          "column": "subscription_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "external_transaction_id",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "gateway_response",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "amount",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users_faves_performers": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "weight",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "performer_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "user_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "subscriptions_plans": {
+      "type_mismatches": [
+        {
+          "column": "price",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "sort_order",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "duration_days",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "max_storage_mb",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "max_uploads",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "currency",
+          "schema_type": "VARCHAR(3)",
+          "model_type": "String"
+        },
+        {
+          "column": "features",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media_performers": {
+      "type_mismatches": [
+        {
+          "column": "gender",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "performer_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "transactions": {
+      "type_mismatches": [
+        {
+          "column": "receiver_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "payment_method_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "currency",
+          "schema_type": "VARCHAR(3)",
+          "model_type": "String"
+        },
+        {
+          "column": "status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "external_transaction_id",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "sender_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "amount",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "transactions_type_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media": {
+      "type_mismatches": [
+        {
+          "column": "download_count",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "metadata_",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "vote_count",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "content_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "tmdb_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "credit_cost",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "other_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "min_age",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "view_count",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "video_trailer_file_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "total_seasons",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "like_count",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "total_episodes",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "tvdb_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_type_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "runtime",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "subscriptions_history": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "action_type",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "new_status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "subscriptions_plan_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "subscription_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "old_status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media_genres": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "genre_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "transactions_types": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "code",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "invitations": {
+      "type_mismatches": [
+        {
+          "column": "invitation_token",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "inviter_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "accepted_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "invited_email",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "performers": {
+      "type_mismatches": [
+        {
+          "column": "gender",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "tmdb_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "payment_methods": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "code",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "configuration",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "tickets_messages": {
+      "type_mismatches": [
+        {
+          "column": "ticket_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "events": {
+      "type_mismatches": [
+        {
+          "column": "session_id",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "events_type_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media_categories": {
+      "type_mismatches": [
+        {
+          "column": "sort_order",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "parent_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "slug",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "languages": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "code",
+          "schema_type": "VARCHAR(10)",
+          "model_type": "String"
+        },
+        {
+          "column": "native_name",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "tv_channels": {
+      "type_mismatches": [
+        {
+          "column": "channel_number",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "stream_url",
+          "schema_type": "VARCHAR(1000)",
+          "model_type": "String"
+        },
+        {
+          "column": "imdb_rating",
+          "schema_type": "NUMERIC(3, 1)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "requires_subscriptions_plan_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "logo_url",
+          "schema_type": "VARCHAR(500)",
+          "model_type": "String"
+        },
+        {
+          "column": "category_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "credit_cost",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "episodes": {
+      "type_mismatches": [
+        {
+          "column": "user_score",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "episode_number",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "season_number",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "vote_count",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "still_path",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users_media_affinity": {
+      "type_mismatches": [
+        {
+          "column": "affinity_type",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media_types": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "code",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "max_file_size_mb",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "credit_cost",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "credit_transactions": {
+      "type_mismatches": [
+        {
+          "column": "reference_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "transaction_type",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "reference_type",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "balance_before",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "payment_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "balance_after",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "amount",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media_directors": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "director_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media_ignore": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users_devices": {
+      "type_mismatches": [
+        {
+          "column": "device_type",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "location_info",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "browser_info",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "device_name",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "device_fingerprint",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        }
+      ]
+    },
+    "content_reports": {
+      "type_mismatches": [
+        {
+          "column": "reported_by_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "resolved_by_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "report_type",
+          "schema_type": "VARCHAR(30)",
+          "model_type": "String"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "resellers_details": {
+      "type_mismatches": [
+        {
+          "column": "total_earnings",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "tax_id",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_max",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "commission_rate",
+          "schema_type": "NUMERIC(5, 4)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "business_name",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_counter",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "payout_method",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "total_referrals",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "paid_earnings",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "website_url",
+          "schema_type": "VARCHAR(500)",
+          "model_type": "String"
+        },
+        {
+          "column": "pending_earnings",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "min_payout_amount",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "payout_details",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        }
+      ]
+    },
+    "users_referral_earnings": {
+      "type_mismatches": [
+        {
+          "column": "referral_code_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "earning_type",
+          "schema_type": "VARCHAR(30)",
+          "model_type": "String"
+        },
+        {
+          "column": "reference_transaction_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "credits_awarded",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "referrer_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "referred_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "amount",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "currency",
+          "schema_type": "VARCHAR(3)",
+          "model_type": "String"
+        }
+      ]
+    },
+    "resellers_commissions": {
+      "type_mismatches": [
+        {
+          "column": "reference_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "commission_rate",
+          "schema_type": "NUMERIC(5, 4)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "base_amount",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "reseller_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "customer_users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "transaction_type",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "commission_amount",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "currency",
+          "schema_type": "VARCHAR(3)",
+          "model_type": "String"
+        },
+        {
+          "column": "status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "resellers_assets": {
+      "type_mismatches": [
+        {
+          "column": "sort_order",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "mime_type",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "file_size_bytes",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "asset_type",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "file_path",
+          "schema_type": "VARCHAR(500)",
+          "model_type": "String"
+        },
+        {
+          "column": "asset_name",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "reseller_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "events_types": {
+      "type_mismatches": [
+        {
+          "column": "retention_days",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "code",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "resellers_settings": {
+      "type_mismatches": [
+        {
+          "column": "setting_type",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "setting_key",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "reseller_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media_categories_assignments": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "category_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media_backup": {
+      "type_mismatches": [
+        {
+          "column": "file_hash",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "download_count",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "backdrop_path",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "vote_count",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "processing_status",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "tagline",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "title",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "content_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "filename_original",
+          "schema_type": "VARCHAR(500)",
+          "model_type": "String"
+        },
+        {
+          "column": "status",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "tmdb_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "file_path",
+          "schema_type": "VARCHAR(1000)",
+          "model_type": "String"
+        },
+        {
+          "column": "preview_path",
+          "schema_type": "VARCHAR(1000)",
+          "model_type": "String"
+        },
+        {
+          "column": "credit_cost",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "thumbnail_path",
+          "schema_type": "VARCHAR(1000)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "still_path",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "min_age",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "original_language",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "view_count",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "video_trailer_file_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "total_seasons",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "like_count",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "genre",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "original_name",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "tmdb_media_type",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "total_episodes",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "user_score",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "content_type",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "tvdb_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_type_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "trailer_url",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "mime_type",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "imdb_id",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "filename_stored",
+          "schema_type": "VARCHAR(500)",
+          "model_type": "String"
+        },
+        {
+          "column": "_metadata",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "trailer_id",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "runtime",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "system_settings": {
+      "type_mismatches": [
+        {
+          "column": "setting_type",
+          "schema_type": "VARCHAR(20)",
+          "model_type": "String"
+        },
+        {
+          "column": "setting_key",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users_actions": {
+      "type_mismatches": [
+        {
+          "column": "target_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "action_type",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "action_category",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "action_data",
+          "schema_type": "JSONB",
+          "model_type": "JSON"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "target_type",
+          "schema_type": "VARCHAR(50)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "api_keys": {
+      "type_mismatches": [
+        {
+          "column": "rate_limit_per_hour",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "api_key",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "api_secret",
+          "schema_type": "VARCHAR(255)",
+          "model_type": "String"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "users_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "key_name",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "users_faves_genres": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "weight",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "genre_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "user_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "media_subtitles": {
+      "type_mismatches": [
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "language_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "mime_type",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "file_size_bytes",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "file_path",
+          "schema_type": "VARCHAR(1000)",
+          "model_type": "String"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "media_id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    },
+    "credit_packages": {
+      "type_mismatches": [
+        {
+          "column": "bonus_credits",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "sort_order",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "id",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "credit_amount",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "currency",
+          "schema_type": "VARCHAR(3)",
+          "model_type": "String"
+        },
+        {
+          "column": "price_amount",
+          "schema_type": "NUMERIC(15, 2)",
+          "model_type": "Numeric"
+        },
+        {
+          "column": "updated_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        },
+        {
+          "column": "name",
+          "schema_type": "VARCHAR(100)",
+          "model_type": "String"
+        },
+        {
+          "column": "created_by",
+          "schema_type": "INTEGER",
+          "model_type": "Integer"
+        }
+      ]
+    }
+  },
+  "categories": {
+    "critical": [],
+    "warning": [
+      "Table 'support_tickets': Column 'priority' type mismatch (DB: VARCHAR(10), Model: String)",
+      "Table 'support_tickets': Column 'assigned_to_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'support_tickets': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'support_tickets': Column 'category' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'support_tickets': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'support_tickets': Column 'subject' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'support_tickets': Column 'status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'support_tickets': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'support_tickets': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'files': Column 'external_id' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'files': Column 'content_type' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'files': Column 'label' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'files': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'files': Column 'original_filename' type mismatch (DB: VARCHAR(500), Model: String)",
+      "Table 'files': Column 'path' type mismatch (DB: VARCHAR(500), Model: String)",
+      "Table 'files': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'files': Column 'episode_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'files': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'files': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'referral_codes': Column 'current_uses' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'referral_codes': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'referral_codes': Column 'reward_type' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'referral_codes': Column 'code' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'referral_codes': Column 'reward_value' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'referral_codes': Column 'referrer_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'referral_codes': Column 'usage_limit' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'referral_codes': Column 'referred_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'referral_codes': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'referral_codes': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_quality_levels': Column 'codec' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'media_quality_levels': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_quality_levels': Column 'bitrate_kbps' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_quality_levels': Column 'quality_name' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'media_quality_levels': Column 'file_path' type mismatch (DB: VARCHAR(1000), Model: String)",
+      "Table 'media_quality_levels': Column 'resolution_height' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_quality_levels': Column 'processing_status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'media_quality_levels': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_quality_levels': Column 'resolution_width' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'playlists': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'playlists': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'playlists': Column 'name' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'playlists': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'playlists': Column 'thumbnail_url' type mismatch (DB: VARCHAR(1000), Model: String)",
+      "Table 'playlists': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'pw_hashed' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'users': Column 'failed_login_attempts' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'name_last' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'users': Column 'email' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'users': Column 'parent_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'postal_zip' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'users': Column 'users_type_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'address_2' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'users': Column 'timezone' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'users': Column 'password_reset_token' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'users': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'avatar_url' type mismatch (DB: VARCHAR(500), Model: String)",
+      "Table 'users': Column 'language_preference' type mismatch (DB: VARCHAR(10), Model: String)",
+      "Table 'users': Column 'phone' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'users': Column 'notification_settings' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'users': Column 'user_score_limit' type mismatch (DB: VARCHAR(10), Model: String)",
+      "Table 'users': Column 'city' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'users': Column 'payee_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'name_display' type mismatch (DB: VARCHAR(150), Model: String)",
+      "Table 'users': Column 'referred_by_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'address_1' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'users': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'country' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'users': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'total_storage_used_mb' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'username' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'users': Column 'credit_balance' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users': Column 'name_first' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'users': Column 'preferences' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'users': Column 'state' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'users_favorites': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_favorites': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_favorites': Column 'favorite_type' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'users_favorites': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_types': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_types': Column 'code' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'users_types': Column 'max_storage_mb' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_types': Column 'max_uploads' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_types': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_types': Column 'name' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'users_types': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'directors': Column 'gender' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'directors': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'directors': Column 'tmdb_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'directors': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'directors': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'genres': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'genres': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'genres': Column 'name' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'genres': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_ratings': Column 'user_score' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_ratings': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_ratings': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_ratings': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_directors': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_directors': Column 'weight' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_directors': Column 'director_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_directors': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_directors': Column 'user_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_directors': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'playlists_media_items': Column 'sort_order' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'playlists_media_items': Column 'added_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'playlists_media_items': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'playlists_media_items': Column 'playlist_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'playlists_media_items': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_sessions': Column 'device_info' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'users_sessions': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_sessions': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_sessions': Column 'session_token' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'notifications': Column 'title' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'notifications': Column 'priority' type mismatch (DB: VARCHAR(10), Model: String)",
+      "Table 'notifications': Column 'notification_type' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'notifications': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'notifications': Column 'action_url' type mismatch (DB: VARCHAR(500), Model: String)",
+      "Table 'notifications': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'notifications': Column '_metadata' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'notifications': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'notifications': Column '_metadata' nullable mismatch (DB: False, Model: True)",
+      "Table 'subscriptions': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions': Column 'subscriptions_plan_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions': Column 'status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'subscriptions': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_media_history': Column 'playback_position_seconds' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_media_history': Column 'device_type' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'users_media_history': Column 'ip_address' type mismatch (DB: INET, Model: String)",
+      "Table 'users_media_history': Column 'device_info' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'users_media_history': Column 'credits_spent' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_media_history': Column 'completion_percentage' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_media_history': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_media_history': Column 'quality_level' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'users_media_history': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_media_history': Column 'action_type' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'payments': Column 'credits_purchased' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'payments': Column 'payment_status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'payments': Column 'credit_package_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'payments': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'payments': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'payments': Column 'payment_method_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'payments': Column 'currency' type mismatch (DB: VARCHAR(3), Model: String)",
+      "Table 'payments': Column 'subscription_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'payments': Column 'external_transaction_id' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'payments': Column 'gateway_response' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'payments': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'payments': Column 'amount' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'payments': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_performers': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_performers': Column 'weight' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_performers': Column 'performer_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_performers': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_performers': Column 'user_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_performers': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_plans': Column 'price' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'subscriptions_plans': Column 'sort_order' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_plans': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_plans': Column 'duration_days' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_plans': Column 'max_storage_mb' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_plans': Column 'max_uploads' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_plans': Column 'currency' type mismatch (DB: VARCHAR(3), Model: String)",
+      "Table 'subscriptions_plans': Column 'features' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'subscriptions_plans': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_plans': Column 'name' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'subscriptions_plans': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_performers': Column 'gender' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_performers': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_performers': Column 'performer_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_performers': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_performers': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_performers': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'transactions': Column 'receiver_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'transactions': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'transactions': Column 'payment_method_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'transactions': Column 'currency' type mismatch (DB: VARCHAR(3), Model: String)",
+      "Table 'transactions': Column 'status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'transactions': Column 'external_transaction_id' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'transactions': Column 'sender_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'transactions': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'transactions': Column 'amount' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'transactions': Column 'transactions_type_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'transactions': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'download_count' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'metadata_' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'media': Column 'vote_count' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'content_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'tmdb_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'credit_cost' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'other_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'min_age' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'view_count' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'video_trailer_file_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'total_seasons' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'like_count' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'total_episodes' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'tvdb_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'media_type_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media': Column 'runtime' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_history': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_history': Column 'action_type' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'subscriptions_history': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_history': Column 'new_status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'subscriptions_history': Column 'subscriptions_plan_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_history': Column 'subscription_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'subscriptions_history': Column 'old_status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'subscriptions_history': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_genres': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_genres': Column 'genre_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_genres': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_genres': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'transactions_types': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'transactions_types': Column 'code' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'transactions_types': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'transactions_types': Column 'name' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'transactions_types': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'invitations': Column 'invitation_token' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'invitations': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'invitations': Column 'inviter_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'invitations': Column 'accepted_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'invitations': Column 'status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'invitations': Column 'invited_email' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'invitations': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'invitations': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'performers': Column 'gender' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'performers': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'performers': Column 'tmdb_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'performers': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'performers': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'payment_methods': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'payment_methods': Column 'code' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'payment_methods': Column 'configuration' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'payment_methods': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'payment_methods': Column 'name' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'payment_methods': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tickets_messages': Column 'ticket_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tickets_messages': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tickets_messages': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tickets_messages': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tickets_messages': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'events': Column 'session_id' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'events': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'events': Column 'events_type_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'events': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'events': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_categories': Column 'sort_order' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_categories': Column 'parent_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_categories': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_categories': Column 'slug' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'media_categories': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_categories': Column 'name' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'media_categories': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'languages': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'languages': Column 'code' type mismatch (DB: VARCHAR(10), Model: String)",
+      "Table 'languages': Column 'native_name' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'languages': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'languages': Column 'name' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'languages': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tv_channels': Column 'channel_number' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tv_channels': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tv_channels': Column 'stream_url' type mismatch (DB: VARCHAR(1000), Model: String)",
+      "Table 'tv_channels': Column 'imdb_rating' type mismatch (DB: NUMERIC(3, 1), Model: Numeric)",
+      "Table 'tv_channels': Column 'requires_subscriptions_plan_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tv_channels': Column 'logo_url' type mismatch (DB: VARCHAR(500), Model: String)",
+      "Table 'tv_channels': Column 'category_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tv_channels': Column 'credit_cost' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tv_channels': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'tv_channels': Column 'name' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'tv_channels': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'episodes': Column 'user_score' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'episodes': Column 'episode_number' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'episodes': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'episodes': Column 'season_number' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'episodes': Column 'vote_count' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'episodes': Column 'still_path' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'episodes': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'episodes': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'episodes': Column 'name' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'episodes': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_media_affinity': Column 'affinity_type' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'users_media_affinity': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_media_affinity': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_types': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_types': Column 'code' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'media_types': Column 'max_file_size_mb' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_types': Column 'credit_cost' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_types': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_types': Column 'name' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'media_types': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_transactions': Column 'reference_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_transactions': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_transactions': Column 'transaction_type' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'credit_transactions': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_transactions': Column 'reference_type' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'credit_transactions': Column 'balance_before' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_transactions': Column 'payment_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_transactions': Column 'balance_after' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_transactions': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_transactions': Column 'amount' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_transactions': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_directors': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_directors': Column 'director_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_directors': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_directors': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_directors': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_ignore': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_ignore': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_ignore': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_ignore': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_devices': Column 'device_type' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'users_devices': Column 'location_info' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'users_devices': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_devices': Column 'browser_info' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'users_devices': Column 'device_name' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'users_devices': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_devices': Column 'device_fingerprint' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'content_reports': Column 'reported_by_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'content_reports': Column 'resolved_by_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'content_reports': Column 'report_type' type mismatch (DB: VARCHAR(30), Model: String)",
+      "Table 'content_reports': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'content_reports': Column 'status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'content_reports': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_details': Column 'total_earnings' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'resellers_details': Column 'tax_id' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'resellers_details': Column 'users_max' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_details': Column 'commission_rate' type mismatch (DB: NUMERIC(5, 4), Model: Numeric)",
+      "Table 'resellers_details': Column 'business_name' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'resellers_details': Column 'users_counter' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_details': Column 'payout_method' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'resellers_details': Column 'total_referrals' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_details': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_details': Column 'paid_earnings' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'resellers_details': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_details': Column 'website_url' type mismatch (DB: VARCHAR(500), Model: String)",
+      "Table 'resellers_details': Column 'pending_earnings' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'resellers_details': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_details': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_details': Column 'min_payout_amount' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'resellers_details': Column 'payout_details' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'users_referral_earnings': Column 'referral_code_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_referral_earnings': Column 'earning_type' type mismatch (DB: VARCHAR(30), Model: String)",
+      "Table 'users_referral_earnings': Column 'reference_transaction_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_referral_earnings': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_referral_earnings': Column 'credits_awarded' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_referral_earnings': Column 'referrer_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_referral_earnings': Column 'referred_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_referral_earnings': Column 'status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'users_referral_earnings': Column 'amount' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'users_referral_earnings': Column 'currency' type mismatch (DB: VARCHAR(3), Model: String)",
+      "Table 'resellers_commissions': Column 'reference_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_commissions': Column 'commission_rate' type mismatch (DB: NUMERIC(5, 4), Model: Numeric)",
+      "Table 'resellers_commissions': Column 'base_amount' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'resellers_commissions': Column 'reseller_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_commissions': Column 'customer_users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_commissions': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_commissions': Column 'transaction_type' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'resellers_commissions': Column 'commission_amount' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'resellers_commissions': Column 'currency' type mismatch (DB: VARCHAR(3), Model: String)",
+      "Table 'resellers_commissions': Column 'status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'resellers_commissions': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_commissions': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_assets': Column 'sort_order' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_assets': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_assets': Column 'mime_type' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'resellers_assets': Column 'file_size_bytes' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_assets': Column 'asset_type' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'resellers_assets': Column 'file_path' type mismatch (DB: VARCHAR(500), Model: String)",
+      "Table 'resellers_assets': Column 'asset_name' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'resellers_assets': Column 'reseller_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_assets': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_assets': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'events_types': Column 'retention_days' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'events_types': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'events_types': Column 'code' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'events_types': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'events_types': Column 'name' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'events_types': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_settings': Column 'setting_type' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'resellers_settings': Column 'setting_key' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'resellers_settings': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_settings': Column 'reseller_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_settings': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'resellers_settings': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_categories_assignments': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_categories_assignments': Column 'category_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_categories_assignments': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_categories_assignments': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'file_hash' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'download_count' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'backdrop_path' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'vote_count' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'processing_status' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'media_backup': Column 'tagline' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'title' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'content_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'filename_original' type mismatch (DB: VARCHAR(500), Model: String)",
+      "Table 'media_backup': Column 'status' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'tmdb_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'file_path' type mismatch (DB: VARCHAR(1000), Model: String)",
+      "Table 'media_backup': Column 'preview_path' type mismatch (DB: VARCHAR(1000), Model: String)",
+      "Table 'media_backup': Column 'credit_cost' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'thumbnail_path' type mismatch (DB: VARCHAR(1000), Model: String)",
+      "Table 'media_backup': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'still_path' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'min_age' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'original_language' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'view_count' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'video_trailer_file_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'name' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'total_seasons' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'like_count' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'genre' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'original_name' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'tmdb_media_type' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'total_episodes' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'user_score' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'content_type' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'tvdb_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'media_type_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'trailer_url' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_backup': Column 'mime_type' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'media_backup': Column 'imdb_id' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'filename_stored' type mismatch (DB: VARCHAR(500), Model: String)",
+      "Table 'media_backup': Column '_metadata' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'media_backup': Column 'trailer_id' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'media_backup': Column 'runtime' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'system_settings': Column 'setting_type' type mismatch (DB: VARCHAR(20), Model: String)",
+      "Table 'system_settings': Column 'setting_key' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'system_settings': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'system_settings': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'system_settings': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_actions': Column 'target_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_actions': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_actions': Column 'action_type' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'users_actions': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_actions': Column 'action_category' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'users_actions': Column 'action_data' type mismatch (DB: JSONB, Model: JSON)",
+      "Table 'users_actions': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_actions': Column 'target_type' type mismatch (DB: VARCHAR(50), Model: String)",
+      "Table 'users_actions': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'api_keys': Column 'rate_limit_per_hour' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'api_keys': Column 'api_key' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'api_keys': Column 'api_secret' type mismatch (DB: VARCHAR(255), Model: String)",
+      "Table 'api_keys': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'api_keys': Column 'users_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'api_keys': Column 'key_name' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'api_keys': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_genres': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_genres': Column 'weight' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_genres': Column 'genre_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_genres': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_genres': Column 'user_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'users_faves_genres': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_subtitles': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_subtitles': Column 'language_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_subtitles': Column 'mime_type' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'media_subtitles': Column 'file_size_bytes' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_subtitles': Column 'file_path' type mismatch (DB: VARCHAR(1000), Model: String)",
+      "Table 'media_subtitles': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_subtitles': Column 'media_id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'media_subtitles': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_packages': Column 'bonus_credits' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_packages': Column 'sort_order' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_packages': Column 'id' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_packages': Column 'credit_amount' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_packages': Column 'currency' type mismatch (DB: VARCHAR(3), Model: String)",
+      "Table 'credit_packages': Column 'price_amount' type mismatch (DB: NUMERIC(15, 2), Model: Numeric)",
+      "Table 'credit_packages': Column 'updated_by' type mismatch (DB: INTEGER, Model: Integer)",
+      "Table 'credit_packages': Column 'name' type mismatch (DB: VARCHAR(100), Model: String)",
+      "Table 'credit_packages': Column 'created_by' type mismatch (DB: INTEGER, Model: Integer)"
+    ],
+    "info": []
+  }
+}

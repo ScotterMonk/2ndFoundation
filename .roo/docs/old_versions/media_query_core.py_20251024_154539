@@ -1,0 +1,41 @@
+# Created by GPT-5 | 2025-10-24
+"""
+Core query builders for media search.
+No Flask imports.
+"""
+
+from typing import Optional
+from sqlalchemy.orm import Query
+from models.models_media import Media, Genre, MediaGenre
+
+# Created by GPT-5 | 2025-10-24
+def build_media_search_query(db_session, search_term, genre_id: Optional[int] = None):
+    """
+    Builds an SQLAlchemy query for media search with filters.
+    
+    Args:
+        db_session: The SQLAlchemy database session.
+        search_term (str): The search term to filter media titles by.
+        genre_id (int, optional): The ID of the genre to filter by. Defaults to None.
+        
+    Returns:
+        SQLAlchemy query: A query object with filters applied.
+    """
+    # Normalize base query
+    query = db_session.query(Media)
+
+    # Apply title search if provided (case-insensitive)
+    if search_term:
+        term = f"%{str(search_term).strip()}%"
+        query = query.filter(Media.title.ilike(term))
+
+    # Apply genre filter via explicit joins for SQL-side filtering
+    if genre_id is not None:
+        query = (
+            query.join(MediaGenre, MediaGenre.media_id == Media.id)
+                 .join(Genre, Genre.id == MediaGenre.genre_id)
+                 .filter(Genre.id == genre_id)
+                 .distinct()  # prevent duplicates due to joins
+        )
+
+    return query

@@ -1,0 +1,494 @@
+# Created by GLM-4.6 | 2025-10-24
+"""
+Unit tests for utils/media_query_core.py module.
+
+Tests cover:
+- build_media_search_query()
+- normalize_media_results()
+- sort_media_results()
+- paginate_media_query()
+
+Uses live PostgreSQL database with proper fixtures.
+"""
+
+import pytest
+from datetime import datetime, timezone
+from unittest.mock import Mock, patch
+from sqlalchemy.orm import Query
+from utils.media_query_core import (
+    build_media_search_query,
+    normalize_media_results,
+    sort_media_results,
+    paginate_media_query
+)
+from models.models_media import Media, Genre, MediaGenre
+from models.models_user import User, UserType
+from utils.database import db
+
+
+# Fixtures
+@pytest.fixture(scope='function')
+def sample_media(app):
+    """Create sample media records for testing."""
+    with app.app_context():
+        # Create test user
+        user_type = UserType(code='standard', name='Standard User')
+        db.session.add(user_type)
+        db.session.commit()
+        
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            pw_hashed='hashed_password',
+            users_type_id=user_type.id
+        )
+        db.session.add(user)
+        db.session.commit()
+        
+        # Create test genre
+        genre = Genre(name='Action')
+        db.session.add(genre)
+        db.session.commit()
+        
+        # Create media type
+        from models.models_media import MediaType
+        media_type = MediaType(code='movie', name='Movie')
+        db.session.add(media_type)
+        db.session.commit()
+        
+        # Create sample media items
+        media_items = []
+        for i in range(5):
+            media = Media(
+                users_id=user.id,
+                media_type_id=media_type.id,
+                title=f'Test Movie {i}',
+                rating=7.5 + i,
+                created_at=datetime.now(timezone.utc)
+            )
+            media_items.append(media)
+            # Add genre association to some items
+            if i % 2 == 0:
+                media_genre = MediaGenre(media_id=media.id, genre_id=genre.id)
+                db.session.add(media_genre)
+        
+        db.session.add_all(media_items)
+        db.session.commit()
+        
+        yield media_items
+
+
+@pytest.fixture(scope='function')
+def sample_media_list():
+    """Create sample media list for testing."""
+    return [
+        {
+            'id': 1,
+            'title': 'Test Movie 1',
+            'rating': 8.5,
+            'created_at': '2025-10-24T16:00:00',
+            'media_type': 'Movie',
+            'owner_username': 'testuser'
+        },
+        {
+            'id': 2,
+            'title': 'Test Movie 2',
+            'rating': None,
+            'created_at': None,
+            'media_type': None,
+            'owner_username': None
+        },
+        {
+            'id': 3,
+            'title': 'The Matrix',
+            'rating': 9.0,
+            'created_at': '2025-10-23T10:30:00',
+            'media_type': 'Movie',
+            'owner_username': 'testuser'
+        }
+    ]
+
+
+class TestBuildMediaSearchQuery:
+    """Test cases for build_media_search_query function."""
+    
+    def test_build_media_search_query_no_filters(self, app, sample_media):
+        """Test query building with no filters."""
+        with app.app_context():
+            query = build_media_search_query(db.session, None, None)
+            
+            # Should return a Query object
+            assert isinstance(query, Query)
+            
+            # Query should select from Media table
+            assert str(query).startswith('SELECT')
+    
+    def test_build_media_search_query_with_search_term(self, app, sample_media):
+        """Test query building with search term."""
+        with app.app_context():
+            query = build_media_search_query(db.session, 'Matrix', None)
+            
+            # Should filter by title
+            assert 'title.ilike' in str(query)
+            assert '%matrix%' in str(query)
+    
+    def test_build_media_search_query_with_genre_filter(self, app, sample_media):
+        """Test query building with genre filter."""
+        with app.app_context():
+            # Get the first genre from sample media
+            first_media = sample_media[0]
+            genre_id = None
+            for mg in first_media.genres:
+                genre_id = mg.genre_id
+                break
+            
+            query = build_media_search_query(db.session, None, genre_id)
+            
+            # Should include joins
+            assert 'JOIN' in str(query)
+            assert 'media_genres' in str(query)
+            assert 'genres' in str(query)
+    
+    def test_build_media_search_query_with_both_filters(self, app, sample_media):
+        """Test query building with both search term and genre filter."""
+        with app.app_context():
+            first_media = sample_media[0]
+            genre_id = None
+            for mg in first_media.genres:
+                genre_id = mg.genre_id
+                break
+            
+            query = build_media_search_query(db.session, 'Test', genre_id)
+            
+            # Should include both title filter and joins
+            assert 'title.ilike' in str(query)
+            assert 'JOIN' in str(query)
+            assert '%test%' in str(query)
+    
+    def test_build_media_search_query_edge_cases(self, app):
+        """Test edge cases for query building."""
+        with app.app_context():
+            # Test with empty search term (should not crash)
+            query = build_media_search_query(db.session, '', None)
+            assert isinstance(query, Query)
+            
+            # Test with special characters
+            query = build_media_search_query(db.session, "Test' Special \"Characters\"", None)
+            assert isinstance(query, Query)
+            # Improved assertion with better readability and error handling
+            query_str = str(query)
+            expected_pattern = "%test\\' special \\"characters\\'%"
+            
+            # Check that the query string contains the expected escaped pattern
+            assert expected_pattern in query_str, (
+                f"Expected query to contain escaped pattern '{expected_pattern}', "
+                f"but got: {query_str}"
+            )
+            
+            # Additional validation: ensure proper SQL escaping
+            assert "title.ilike" in query_str, "Query should use case-insensitive LIKE for title filtering"
+
+
+class TestNormalizeMediaResults:
+    """Test cases for normalize_media_results function."""
+    
+    def test_normalize_media_results_empty_list(self):
+        """Test normalization with empty list."""
+        result = normalize_media_results([])
+        assert result == []
+    
+    def test_normalize_media_results_valid_list(self, sample_media_list):
+        """Test normalization with valid media list."""
+        with app.app_context():
+            # Create mock media objects with required attributes
+            mock_media = []
+            for item in sample_media_list:
+                mock_media = Mock()
+                mock_media.id = item['id']
+                mock_media.title = item['title']
+                mock_media.rating = item['rating']
+                
+                # Mock created_at as datetime
+                if item['created_at']:
+                    mock_media.created_at = datetime.strptime(item['created_at'], '%Y-%m-%dT%H:%M:%S')
+                else:
+                    mock_media.created_at = None
+                
+                # Mock media_type relationship
+                mock_media_type = Mock()
+                mock_media_type.name = item['media_type']
+                mock_media.media_type = mock_media_type
+                
+                # Mock owner relationship
+                mock_owner = Mock()
+                mock_owner.username = item['owner_username']
+                mock_media.owner = mock_owner
+                
+                mock_media.append(mock_media)
+            
+            result = normalize_media_results(mock_media)
+            
+            # Should return list of dictionaries
+            assert isinstance(result, list)
+            assert len(result) == 3
+            
+            # Check first item normalization
+            first_item = result[0]
+            assert first_item['id'] == 1
+            assert first_item['title'] == 'Test Movie 1'
+            assert first_item['rating'] == 8.5
+            assert first_item['created_at'] == '2025-10-24 16:00:00'
+            assert first_item['media_type'] == 'Movie'
+            assert first_item['owner_username'] == 'testuser'
+            
+            # Check item with missing data
+            second_item = result[1]
+            assert second_item['id'] == 2
+            assert second_item['title'] == 'Test Movie 2'
+            assert second_item['rating'] is None
+            assert second_item['created_at'] is None
+            assert second_item['media_type'] is None
+            assert second_item['owner_username'] is None
+    
+    def test_normalize_media_results_edge_cases(self):
+        """Test normalization edge cases."""
+        with app.app_context():
+            # Test with media object missing created_at
+            mock_media = Mock()
+            mock_media.id = 1
+            mock_media.title = 'Test'
+            mock_media.rating = 8.5
+            # Don't set created_at to test fallback
+            mock_media.created_at = None
+            
+            result = normalize_media_results([mock_media])
+            item = result[0]
+            
+            # Should handle missing created_at gracefully
+            assert item['created_at'] is None
+            
+            # Test with media object having non-datetime created_at
+            mock_media.created_at = 'not_a_datetime'
+            
+            result = normalize_media_results([mock_media])
+            item = result[0]
+            
+            # Should fallback to string representation
+            assert item['created_at'] == 'not_a_datetime'
+
+
+class TestSortMediaResults:
+    """Test cases for sort_media_results function."""
+    
+    def test_sort_media_results_empty_list(self):
+        """Test sorting with empty list."""
+        result = sort_media_results([], 'title', 'asc')
+        assert result == []
+    
+    def test_sort_media_results_by_title_asc(self, sample_media_list):
+        """Test sorting by title ascending."""
+        result = sort_media_results(sample_media_list, 'title', 'asc')
+        
+        # Should be sorted by title (case-insensitive, ignoring articles)
+        assert result[0]['title'] == 'Test Movie 1'  # T comes before The
+        assert result[1]['title'] == 'The Matrix'  # The Matrix comes after Test Movie 1
+        assert result[2]['title'] == 'Test Movie 2'
+    
+    def test_sort_media_results_by_title_desc(self, sample_media_list):
+        """Test sorting by title descending."""
+        result = sort_media_results(sample_media_list, 'title', 'desc')
+        
+        # Should be sorted by title descending
+        assert result[0]['title'] == 'Test Movie 2'
+        assert result[1]['title'] == 'The Matrix'
+        assert result[2]['title'] == 'Test Movie 1'
+    
+    def test_sort_media_results_by_rating_asc(self, sample_media_list):
+        """Test sorting by rating ascending."""
+        result = sort_media_results(sample_media_list, 'rating', 'asc')
+        
+        # Should be sorted by rating (None values last)
+        assert result[0]['title'] == 'Test Movie 2'  # None rating comes last
+        assert result[1]['title'] == 'Test Movie 1'  # 8.5 comes before 9.0
+        assert result[2]['title'] == 'The Matrix'  # 9.0 comes last
+    
+    def test_sort_media_results_by_rating_desc(self, sample_media_list):
+        """Test sorting by rating descending."""
+        result = sort_media_results(sample_media_list, 'rating', 'desc')
+        
+        # Should be sorted by rating descending
+        assert result[0]['title'] == 'The Matrix'  # 9.0 comes first
+        assert result[1]['title'] == 'Test Movie 1'  # 8.5 comes second
+        assert result[2]['title'] == 'Test Movie 2'  # None rating comes last
+    
+    def test_sort_media_results_by_type_asc(self, sample_media_list):
+        """Test sorting by type ascending."""
+        result = sort_media_results(sample_media_list, 'type', 'asc')
+        
+        # Should be sorted by media_type (None values last)
+        assert result[0]['title'] == 'Test Movie 1'  # Movie comes before None
+        assert result[2]['title'] == 'Test Movie 2'  # None comes last
+    
+    def test_sort_media_results_by_created_at_asc(self, sample_media_list):
+        """Test sorting by created_at ascending."""
+        result = sort_media_results(sample_media_list, 'created_at', 'asc')
+        
+        # Should be sorted by created_at (None values last)
+        assert result[0]['title'] == 'The Matrix'  # 2025-10-23 comes first
+        assert result[1]['title'] == 'Test Movie 1'  # 2025-10-24 comes second
+        assert result[2]['title'] == 'Test Movie 2'  # None comes last
+    
+    def test_sort_media_results_by_created_at_desc(self, sample_media_list):
+        """Test sorting by created_at descending."""
+        result = sort_media_results(sample_media_list, 'created_at', 'desc')
+        
+        # Should be sorted by created_at descending
+        assert result[0]['title'] == 'Test Movie 2'  # None comes last (so first in desc)
+        assert result[1]['title'] == 'Test Movie 1'  # 2025-10-24 comes second
+        assert result[2]['title'] == 'The Matrix'  # 2025-10-23 comes third
+    
+    def test_sort_media_results_invalid_field(self, sample_media_list):
+        """Test sorting with invalid field."""
+        result = sort_media_results(sample_media_list, 'invalid_field', 'asc')
+        
+        # Should return unsorted list for invalid field
+        assert result == sample_media_list
+    
+    def test_sort_media_results_invalid_direction(self, sample_media_list):
+        """Test sorting with invalid direction."""
+        result = sort_media_results(sample_media_list, 'title', 'invalid')
+        
+        # Should return unsorted list for invalid direction
+        assert result == sample_media_list
+
+
+class TestPaginateMediaQuery:
+    """Test cases for paginate_media_query function."""
+    
+    def test_paginate_media_query_with_sql_query(self, app, sample_media):
+        """Test pagination with SQLAlchemy Query."""
+        with app.app_context():
+            # Create a query from sample media
+            query = db.session.query(Media).filter(Media.users_id == sample_media[0].users_id)
+            
+            result = paginate_media_query(query, 1, 2)
+            
+            # Should return proper pagination structure
+            assert 'items' in result
+            assert 'total' in result
+            assert 'page' in result
+            assert 'per_page' in result
+            assert 'has_next' in result
+            assert 'has_prev' in result
+            
+            # Check pagination values
+            assert result['page'] == 1
+            assert result['per_page'] == 2
+            assert result['total'] == 5  # 5 items in sample_media
+            assert result['has_next'] is True  # Page 1 has next page
+            assert result['has_prev'] is False  # Page 1 has no previous page
+            
+            # Check items count
+            assert len(result['items']) == 2  # 2 items on page 1
+    
+    def test_paginate_media_query_with_sql_query_page_2(self, app, sample_media):
+        """Test pagination with SQLAlchemy Query page 2."""
+        with app.app_context():
+            query = db.session.query(Media).filter(Media.users_id == sample_media[0].users_id)
+            
+            result = paginate_media_query(query, 2, 2)
+            
+            # Check pagination values for page 2
+            assert result['page'] == 2
+            assert result['per_page'] == 2
+            assert result['total'] == 5
+            assert result['has_next'] is False  # Page 2 has no next page
+            assert result['has_prev'] is True  # Page 2 has previous page
+            
+            # Check items count
+            assert len(result['items']) == 2  # Last 2 items
+    
+    def test_paginate_media_query_with_sql_query_last_page(self, app, sample_media):
+        """Test pagination with SQLAlchemy Query last page."""
+        with app.app_context():
+            query = db.session.query(Media).filter(Media.users_id == sample_media[0].users_id)
+            
+            result = paginate_media_query(query, 3, 2)
+            
+            # Check pagination values for page 3 (beyond available data)
+            assert result['page'] == 3
+            assert result['per_page'] == 2
+            assert result['total'] == 5
+            assert result['has_next'] is False  # No next page
+            assert result['has_prev'] is True  # Has previous page
+            
+            # Check items count (should be 1 item on last page)
+            assert len(result['items']) == 1
+    
+    def test_paginate_media_query_with_python_list(self, sample_media_list):
+        """Test pagination with Python list."""
+        with patch('warnings.warn') as mock_warn:
+            # Test with allow_python_fallback=False (should raise error)
+            with pytest.raises(TypeError, match="Expected SQLAlchemy Query"):
+                paginate_media_query(sample_media_list, 1, 2, allow_python_fallback=False)
+            
+            # Test with allow_python_fallback=True
+            result = paginate_media_query(sample_media_list, 1, 2, allow_python_fallback=True)
+            
+            # Should return proper pagination structure
+            assert 'items' in result
+            assert 'total' in result
+            assert 'page' in result
+            assert 'per_page' in result
+            assert 'has_next' in result
+            assert 'has_prev' in result
+            
+            # Check pagination values
+            assert result['page'] == 1
+            assert result['per_page'] == 2
+            assert result['total'] == 3  # 3 items in sample_media_list
+            assert result['has_next'] is True  # Page 1 has next page
+            assert result['has_prev'] is False  # Page 1 has no previous page
+            
+            # Check items count
+            assert len(result['items']) == 2  # 2 items on page 1
+            
+            # Should have warned about large dataset
+            mock_warn.assert_called_once_with(
+                "Python-level pagination used on large dataset (>100 items). "
+                "Consider SQL-level pagination for better performance."
+            )
+    
+    def test_paginate_media_query_with_python_list_large_dataset(self, sample_media_list):
+        """Test pagination with large Python list."""
+        large_list = sample_media_list * 40  # 120 items
+        
+        with patch('warnings.warn') as mock_warn:
+            result = paginate_media_query(large_list, 1, 5, allow_python_fallback=True)
+            
+            # Should warn about large dataset
+            mock_warn.assert_called_once_with(
+                "Python-level pagination used on large dataset (>100 items). "
+                "Consider SQL-level pagination for better performance."
+            )
+    
+    def test_paginate_media_query_invalid_page(self, app):
+        """Test pagination with invalid page number."""
+        with app.app_context():
+            query = db.session.query(Media)
+            
+            with pytest.raises(ValueError, match="page must be an integer >= 1"):
+                paginate_media_query(query, 0, 2)
+    
+    def test_paginate_media_query_invalid_per_page(self, app):
+        """Test pagination with invalid per_page value."""
+        with app.app_context():
+            query = db.session.query(Media)
+            
+            with pytest.raises(ValueError, match="per_page must be an integer >= 1"):
+                paginate_media_query(query, 1, 0)
+    
+    def test_paginate_media_query_invalid_type(self, app):
+        """Test pagination with invalid type."""
+        with pytest.raises(TypeError, match="query must be an SQLAlchemy Query or a list"):
+                paginate_media_query("invalid_type", 1, 2)

@@ -1,0 +1,64 @@
+# Modified by GPT-5 | 2025-10-23
+from uuid import uuid4
+from app import db
+from models.models_user import User
+from werkzeug.security import generate_password_hash
+
+def test_admin_upload_image(client):
+    """
+    Tests the admin media upload functionality end-to-end via form login.
+    Creates its own admin user with a known plain password, logs in, then uploads a file.
+    """
+    test_email = f"upload_admin_{uuid4().hex[:8]}@example.com"
+    test_username = f"upload_admin_{uuid4().hex[:10]}"
+    test_password = "TestAdmin!12345"
+
+    user = User(
+        username=test_username,
+        email=test_email,
+        pw_hashed=generate_password_hash(test_password),
+        users_type_id=4,
+        is_active=True,
+        is_verified=True,            # Required NOT NULL
+        is_verified_email=True,
+        is_verified_phone=False,     # Required NOT NULL
+        credit_balance=0,
+        total_storage_used_mb=0,
+        failed_login_attempts=0,
+        is_locked_out=False
+    )
+    db.session.add(user)
+    db.session.commit()
+    user_id = str(user.id)
+
+    login_post_response = client.post(
+        '/auth/login',
+        data={'email': test_email, 'password': test_password},
+        follow_redirects=False
+    )
+    if login_post_response.status_code != 302:
+        print("\n--- LOGIN FAILED: RESPONSE HTML ---\n")
+        try:
+            print(login_post_response.data.decode('utf-8'))
+        except Exception:
+            print("<non-decodable response body>")
+        print("\n-------------------------------------\n")
+    assert login_post_response.status_code == 302, "Login failed. See HTML output above."
+
+    upload_page_response = client.get('/admin/media/upload', follow_redirects=False)
+    assert upload_page_response.status_code == 200
+
+    test_image_path = 'temp/test_image.png'
+    with open(test_image_path, 'rb') as img:
+        data = {
+            'owner_id': user_id,
+            'media_type_id': '1',
+            'file': (img, 'test_image.png')
+        }
+        upload_response = client.post(
+            '/admin/media/upload',
+            content_type='multipart/form-data',
+            data=data,
+            follow_redirects=False
+        )
+    assert upload_response.status_code == 302

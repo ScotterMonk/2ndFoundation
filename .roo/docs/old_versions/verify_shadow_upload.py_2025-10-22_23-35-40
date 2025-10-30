@@ -1,0 +1,100 @@
+# Created by Gemini 2.5 Pro | 2025-10-22
+import requests
+import os
+import re
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Admin credentials from environment variables
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+BASE_URL = "http://localhost:5000"
+LOGIN_URL = f"{BASE_URL}/auth/login"
+UPLOAD_URL = f"{BASE_URL}/admin/media"
+
+# File to upload
+FILE_PATH = "static/images/logo.png"
+
+def run_upload_test():
+    """
+    Logs in and uploads a file to the media endpoint.
+    """
+    with requests.Session() as session:
+        # 1. Get login page to retrieve CSRF token
+        try:
+            print(f"GET {LOGIN_URL} to fetch CSRF token...")
+            get_response = session.get(LOGIN_URL)
+            get_response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Error getting login page: {e}")
+            return
+
+        # 2. Extract CSRF token from the form
+        csrf_token_match = re.search(r'name="csrf_token" type="hidden" value="([^"]+)"', get_response.text)
+        if not csrf_token_match:
+            print("Could not find CSRF token on login page.")
+            return
+            
+        csrf_token = csrf_token_match.group(1)
+        print(f"CSRF Token found: {csrf_token[:10]}...")
+
+        # 3. Log in
+        login_payload = {
+            "email": ADMIN_EMAIL,
+            "password": ADMIN_PASSWORD,
+            "csrf_token": csrf_token
+        }
+        
+        try:
+            print(f"POST to {LOGIN_URL} to log in...")
+            login_response = session.post(LOGIN_URL, data=login_payload, allow_redirects=True)
+            login_response.raise_for_status()
+            
+            # Check if login was successful by looking for a keyword on the dashboard
+            if "Admin Dashboard" not in login_response.text:
+                print("Login failed. Check credentials or login logic.")
+                # print("Response Text:", login_response.text)
+                return
+            print("Login successful.")
+        except requests.exceptions.RequestException as e:
+            print(f"Error during login: {e}")
+            return
+
+        # 4. Prepare and upload the file
+        if not os.path.exists(FILE_PATH):
+            print(f"File not found at {FILE_PATH}")
+            return
+            
+        with open(FILE_PATH, 'rb') as f:
+            files = {'file': (os.path.basename(FILE_PATH), f, 'image/png')}
+            
+            # The upload form on /admin/media might also require a CSRF token.
+            # We'll fetch it from the media page content which we should have access to after login.
+            try:
+                media_page_response = session.get(UPLOAD_URL)
+                media_page_response.raise_for_status()
+                upload_csrf_match = re.search(r'name="csrf_token" type="hidden" value="([^"]+)"', media_page_response.text)
+                if not upload_csrf_match:
+                    print("Could not find CSRF token on the media upload page.")
+                    return
+                upload_csrf_token = upload_csrf_match.group(1)
+                print(f"Upload CSRF Token found: {upload_csrf_token[:10]}...")
+                
+                form_data = {'csrf_token': upload_csrf_token}
+                
+                print(f"POST to {UPLOAD_URL} to upload the file...")
+                upload_response = session.post(UPLOAD_URL, files=files, data=form_data)
+                
+                # Print final response
+                print("\n--- Upload Response ---")
+                print(f"Status Code: {upload_response.status_code}")
+                print(f"Response Text: {upload_response.text}")
+                
+            except requests.exceptions.RequestException as e:
+                print(f"Error during file upload: {e}")
+
+
+if __name__ == "__main__":
+    run_upload_test()

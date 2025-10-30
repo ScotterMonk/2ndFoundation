@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block title %}Upload Media{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Upload Media Files</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Upload Details</h5>
+            <form method="post" enctype="multipart/form-data" action="{{ url_for('admin.upload_media') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label for="owner" class="form-label">Owner</label>
+                    <input type="text" readonly class="form-control" id="owner" value="{{ owner.username if owner else 'None selected' }}">
+                    {% if owner %}
+                        <input type="hidden" name="owner_user_id" value="{{ owner.id }}">
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="media_type_id" class="form-label">Media Type</label>
+                    <select class="form-select" id="media_type_id" name="media_type_id" required>
+                        <option value="">-- Select Media Type --</option>
+                        {% for media_type in media_types %}
+                            <option value="{{ media_type.id }}" {% if selected_media_type and selected_media_type.id == media_type.id %}selected{% endif %}>
+                                {{ media_type.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="file" class="form-label">Select Files</label>
+                    <input class="form-control" type="file" id="file" name="file" multiple required>
+                </div>
+
+                <a href="{{ url_for('admin.select_owner', next=url_for('admin.upload_media')) }}" class="btn btn-secondary">Change Owner</a>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

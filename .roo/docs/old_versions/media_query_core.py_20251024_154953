@@ -1,0 +1,93 @@
+# Created by GPT-5 | 2025-10-24
+"""
+Core query builders for media search.
+No Flask imports.
+"""
+
+from typing import Optional, List, Dict, Any
+from sqlalchemy.orm import Query
+from models.models_media import Media, Genre, MediaGenre
+
+# Created by GPT-5 | 2025-10-24
+def build_media_search_query(db_session, search_term, genre_id: Optional[int] = None):
+    """
+    Builds an SQLAlchemy query for media search with filters.
+    
+    Args:
+        db_session: The SQLAlchemy database session.
+        search_term (str): The search term to filter media titles by.
+        genre_id (int, optional): The ID of the genre to filter by. Defaults to None.
+        
+    Returns:
+        SQLAlchemy query: A query object with filters applied.
+    """
+    # Normalize base query
+    query = db_session.query(Media)
+
+    # Apply title search if provided (case-insensitive)
+    if search_term:
+        term = f"%{str(search_term).strip()}%"
+        query = query.filter(Media.title.ilike(term))
+
+    # Apply genre filter via explicit joins for SQL-side filtering
+    if genre_id is not None:
+        query = (
+            query.join(MediaGenre, MediaGenre.media_id == Media.id)
+                 .join(Genre, Genre.id == MediaGenre.genre_id)
+                 .filter(Genre.id == genre_id)
+                 .distinct()  # prevent duplicates due to joins
+        )
+
+    return query
+
+
+# Created by GPT-5 | 2025-10-24
+def normalize_media_results(media_list: List[Any]) -> List[Dict[str, Any]]:
+    """
+    Normalizes a list of Media ORM objects into a consistent dictionary format
+    for template display.
+    
+    Args:
+        media_list (list): A list of Media SQLAlchemy ORM objects.
+        
+    Returns:
+        list: A list of dictionaries, each representing a normalized media item
+              with keys: id, title, rating, created_at, media_type, owner_username.
+    """
+    normalized: List[Dict[str, Any]] = []
+    if not media_list:
+        return normalized
+
+    for media in media_list:
+        # created_at formatting
+        created_str = None
+        created_val = getattr(media, 'created_at', None)
+        if created_val is not None:
+            try:
+                created_str = created_val.strftime('%Y-%m-%d %H:%M:%S')
+            except Exception:
+                # Fallback to str if not a datetime-like object
+                try:
+                    created_str = str(created_val)
+                except Exception:
+                    created_str = None
+
+        # media_type name (relationship expected)
+        mt = getattr(media, 'media_type', None)
+        media_type_name = getattr(mt, 'name', None) if mt is not None else None
+
+        # owner username (relationship expected: .owner; fallback-safe with getattr)
+        owner = getattr(media, 'owner', None)
+        owner_username = getattr(owner, 'username', None) if owner is not None else None
+
+        item: Dict[str, Any] = {
+            'id': getattr(media, 'id', None),
+            'title': getattr(media, 'title', None),
+            'rating': getattr(media, 'rating', None),
+            'created_at': created_str,
+            'media_type': media_type_name,
+            'owner_username': owner_username,
+        }
+        normalized.append(item)
+
+    return normalized

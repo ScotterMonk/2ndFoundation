@@ -1,0 +1,39 @@
+# Core Result
+# Created by code-monkey | 2025-10-22
+from typing import TypedDict, Optional, Any, Dict, Union
+from enum import Enum
+
+# Core Error Class
+class CoreError(Exception):
+    """Base exception for core utility errors."""
+    def __init__(self, message: str, error_code: Optional[str] = None, details: Optional[Dict[str, Any]] = None):
+        super().__init__(message)
+        self.message = message
+        self.error_code = error_code
+        self.details = details or {}
+
+# Core Result Class
+class CoreResult:
+    """Standardized result object for core operations."""
+    def __init__(self, success: bool, data: Optional[Any] = None, error: Optional[CoreError] = None, messages: Optional[list] = None):
+        self.success = success
+        self.data = data
+        self.error = error
+        self.messages = messages or []
+    
+    @classmethod
+    def success_result(cls, data: Optional[Any] = None, messages: Optional[list] = None) -> 'CoreResult':
+        return cls(success=True, data=data, messages=messages)
+    
+    @classmethod
+    def failure_result(cls, error: CoreError, messages: Optional[list] = None) -> 'CoreResult':
+        return cls(success=False, error=error, messages=messages)
+
+# Media File Configuration
+class MediaFileConfig:
+    """Configuration for media file processing."""
+    def __init__(self, max_size: int = 100 * 1024 * 1024, allowed_extensions: list = None, 
+                 processing_options: dict = None):
+        self.max_size = max_size
+        self.allowed_extensions = allowed_extensions or ['.mp4', '.avi', '.mkv', '.mov', '.mp3', '.jpg', '.png']
+        self.processing_options = processing_options or {}

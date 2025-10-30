@@ -1,0 +1,148 @@
+"""
+TVDB API utility functions - Core implementations.
+
+This module contains the core TVDB API functionality that serves as the 
+canonical implementation. Other TVDB modules should delegate to functions
+in this module to avoid duplication.
+
+This follows the {domain}_{specific} naming convention established in 
+the duplicate elimination refactoring project.
+"""
+
+from flask import current_app
+from ..api_provider_core import BaseApiProvider
+from ..api_provider_descriptors import TVDB_DESCRIPTOR
+
+# Modified by glm-4.6 | 2025-10-22
+# Instantiate the TVDB provider at module level
+tvdb_provider = BaseApiProvider(TVDB_DESCRIPTOR)
+
+
+def get_tvdb_token_core():
+    """
+    Core implementation: Retrieves a valid TVDB API token, caching it and refreshing if necessary.
+    
+    Returns:
+        str: Valid TVDB API token
+        
+    Raises:
+        ValueError: If TVDB_API_KEY is not configured
+        ConnectionError: If API authentication fails
+    """
+    # Use the token cache from the TVDB descriptor
+    token = TVDB_DESCRIPTOR['token_cache'].get_token()
+    if not token:
+        raise ValueError("Failed to retrieve TVDB token - check API key configuration")
+    return token
+
+
+def search_tvdb_series_core(query):
+    """
+    Core implementation: Searches for a series on TVDB.
+    
+    Args:
+        query (str): Search query string
+        
+    Returns:
+        list: List of search results from TVDB API
+        
+    Raises:
+        ConnectionError: If the search request fails
+    """
+    # Get token from cache
+    token = TVDB_DESCRIPTOR['token_cache'].get_token()
+    if not token:
+        raise ConnectionError("Failed to retrieve TVDB token for search")
+    
+    # Use the provider to make the request
+    headers = TVDB_DESCRIPTOR['header_builder'](token)
+    response = tvdb_provider.get('/search', params={'query': query}, headers_override=headers)
+    
+    if not response['success']:
+        raise ConnectionError(f"Error searching TVDB for '{query}': {response['error']}")
+    
+    return response['data'].get('data', [])
+
+
+def get_tvdb_series_details_core(tvdb_id):
+    """
+    Core implementation: Retrieves detailed series metadata from TVDB.
+    
+    Args:
+        tvdb_id (str): TVDB series ID
+        
+    Returns:
+        dict: Series details from TVDB API
+        
+    Raises:
+        ConnectionError: If the details request fails
+    """
+    # Get token from cache
+    token = TVDB_DESCRIPTOR['token_cache'].get_token()
+    if not token:
+        raise ConnectionError(f"Failed to retrieve TVDB token for series details (ID: {tvdb_id})")
+    
+    # Use the provider to make the request
+    headers = TVDB_DESCRIPTOR['header_builder'](token)
+    response = tvdb_provider.get(f'/series/{tvdb_id}/extended', headers_override=headers)
+    
+    if not response['success']:
+        raise ConnectionError(f"Error retrieving details for TVDB ID '{tvdb_id}': {response['error']}")
+    
+    return response['data']
+
+
+def get_tvdb_movie_details_core(tvdb_id):
+    """
+    Core implementation: Retrieves detailed movie metadata from TVDB.
+    
+    Args:
+        tvdb_id (str): TVDB movie ID
+        
+    Returns:
+        dict: Movie details from TVDB API
+        
+    Raises:
+        ConnectionError: If the details request fails
+    """
+    # Get token from cache
+    token = TVDB_DESCRIPTOR['token_cache'].get_token()
+    if not token:
+        raise ConnectionError(f"Failed to retrieve TVDB token for movie details (ID: {tvdb_id})")
+    
+    # Use the provider to make the request
+    headers = TVDB_DESCRIPTOR['header_builder'](token)
+    response = tvdb_provider.get(f'/movies/{tvdb_id}/extended', headers_override=headers)
+    
+    if not response['success']:
+        raise ConnectionError(f"Error retrieving movie details for TVDB ID '{tvdb_id}': {response['error']}")
+    
+    return response['data']
+
+
+def clear_tvdb_token_core():
+    """
+    Core implementation: Clears the cached TVDB token file.
+    """
+    # The token cache handles file management, so we just need to remove the cache file
+    import os
+    cache_file = os.path.join(
+        TVDB_DESCRIPTOR['token_cache'].cache_dir,
+        f"{TVDB_DESCRIPTOR['token_cache'].provider_name}_token.json"
+    )
+    if os.path.exists(cache_file):
+        try:
+            os.remove(cache_file)
+        except OSError:
+            # Handle potential errors during file removal
+            pass
+
+
+# Define public API
+__all__ = [
+    'get_tvdb_token_core',
+    'search_tvdb_series_core', 
+    'get_tvdb_series_details_core',
+    'get_tvdb_movie_details_core',
+    'clear_tvdb_token_core'
+]
