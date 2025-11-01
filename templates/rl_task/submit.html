@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Code - 2nd Foundation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Submit Your Solution</h1>
+    
+    <form action="{{ url_for('rl_task.submit') }}" method="post" class="submit-form">
+        <div class="form-group">
+            <label for="model_name">Model Name</label>
+            <input type="text" 
+                   id="model_name" 
+                   name="model_name" 
+                   class="form-control"
+                   placeholder="e.g., claude-sonnet-4, gpt-4o"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label for="code">Implementation Code</label>
+            <textarea id="code" 
+                      name="code" 
+                      class="code-editor"
+                      rows="20"
+                      placeholder="def hybrid_search(query: str, limit: int = 10) -> List[Document]:\n    # Your implementation here\n    pass"
+                      required></textarea>
+            <p class="form-help">
+                Implement the <code>hybrid_search</code> function according to the task specification.
+            </p>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-large">
+            🚀 Run Grader
+        </button>
+    </form>
+
+    <!-- Task Reference -->
+    <div class="task-reference">
+        <h2>Quick Reference</h2>
+        <pre class="code-block">{{ task_prompt[:500] }}...</pre>
+        <a href="{{ url_for('rl_task.overview') }}" class="btn btn-secondary btn-small">
+            View Full Task Description
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.code-editor {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border: 1px solid #333;
+    border-radius: 4px;
+}
+</style>
+{% endblock %}

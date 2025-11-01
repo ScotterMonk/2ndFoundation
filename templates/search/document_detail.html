@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.title }} - 2nd Foundation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Document Header -->
+    <div class="document-header">
+        <div class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Home</a> / 
+            <a href="{{ url_for('main.search') }}">Search</a> / 
+            <span>{{ document.title }}</span>
+        </div>
+        
+        <h1>{{ document.title }}</h1>
+        
+        <div class="document-meta">
+            <span class="badge badge-{{ document.category }}">
+                {{ document.category.replace('_', ' ').title() }}
+            </span>
+            <span class="meta-item">
+                📅 {{ document.created_at.strftime('%B %d, %Y') }}
+            </span>
+            {% if document.file_path %}
+                <span class="meta-item">
+                    📄 {{ document.file_path.split('/')[-1] }}
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Document Content -->
+    <article class="document-content">
+        <pre class="content-text">{{ document.content }}</pre>
+    </article>
+
+    <!-- Document Actions -->
+    <div class="document-actions">
+        <a href="{{ url_for('main.search') }}" class="btn btn-secondary">
+            ← Back to Search
+        </a>
+        
+        {% if document.file_path %}
+            <a href="#" class="btn btn-secondary" title="Download not implemented">
+                📥 Download Original
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Related Documents (Similar by embedding) -->
+    <section class="related-section">
+        <h2>Related Documents</h2>
+        <p class="section-note">Documents with similar semantic content</p>
+        <div class="related-grid">
+            <!-- This would require a new route to fetch similar documents -->
+            <p class="empty-state">Feature coming soon</p>
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Search - 2nd Foundation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="search-layout">
+        <!-- Main Search Area -->
+        <div class="search-main">
+            <h1>Search Documents</h1>
+            <p class="page-description">
+                Use hybrid search to find documents using natural language or exact keywords.
+            </p>
+
+            <form action="{{ url_for('main.search') }}" method="post" class="search-form">
+                <div class="form-group">
+                    <label for="query">Search Query</label>
+                    <input type="text" 
+                           id="query" 
+                           name="query" 
+                           class="form-control" 
+                           placeholder="e.g., SELECT * FROM users, neural network training, python average function"
+                           required
+                           autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="limit">Number of Results</label>
+                    <select id="limit" name="limit" class="form-control">
+                        <option value="5">5 results</option>
+                        <option value="10" selected>10 results</option>
+                        <option value="20">20 results</option>
+                        <option value="50">50 results</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-large">
+                    🔍 Search
+                </button>
+            </form>
+
+            <!-- Search Tips -->
+            <div class="search-tips">
+                <h3>Search Tips</h3>
+                <ul>
+                    <li><strong>Exact keywords:</strong> "SELECT * FROM" finds SQL code</li>
+                    <li><strong>Semantic queries:</strong> "How do neural networks learn?" finds conceptual content</li>
+                    <li><strong>Hybrid advantage:</strong> Combines both approaches for best results</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Sidebar: Recent Queries -->
+        <aside class="search-sidebar">
+            <div class="sidebar-card">
+                <h3>Recent Queries</h3>
+                {% if recent_queries %}
+                    <ul class="recent-queries-list">
+                        {% for query in recent_queries %}
+                            <li class="recent-query-item">
+                                <form action="{{ url_for('main.search') }}" method="post" style="display: inline;">
+                                    <input type="hidden" name="query" value="{{ query.query }}">
+                                    <button type="submit" class="query-link">
+                                        {{ query.query[:50] }}{% if query.query|length > 50 %}...{% endif %}
+                                    </button>
+                                </form>
+                                <span class="query-meta">
+                                    {{ query.results_count }} results
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="empty-state">No recent queries</p>
+                {% endif %}
+                
+                <a href="{{ url_for('main.search_history') }}" class="btn btn-secondary btn-small">
+                    View All History
+                </a>
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}

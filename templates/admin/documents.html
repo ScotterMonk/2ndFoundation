@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Documents - Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Document Management</h1>
+
+    <!-- Filters -->
+    <div class="documents-filters">
+        <form method="get" class="filter-form">
+            <select name="category" class="form-control" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category }}" 
+                            {% if request.args.get('category') == category %}selected{% endif %}>
+                        {{ category.replace('_', ' ').title() }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <!-- Documents Table -->
+    <div class="documents-table-container">
+        <table class="documents-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Created</th>
+                    <th>Has Embedding</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents.items %}
+                    <tr>
+                        <td>{{ doc.id }}</td>
+                        <td>
+                            <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}">
+                                {{ doc.title }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ doc.category }}">
+                                {{ doc.category.replace('_', ' ').title() }}
+                            </span>
+                        </td>
+                        <td>{{ doc.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if doc.embedding %}
+                                <span class="status-indicator status-good">✓</span>
+                            {% else %}
+                                <span class="status-indicator status-bad">✗</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            <form action="{{ url_for('admin.reindex_doc', doc_id=doc.id) }}" 
+                                  method="post" 
+                                  style="display: inline;">
+                                <button type="submit" 
+                                        class="btn btn-small btn-secondary"
+                                        title="Reindex">
+                                    🔄
+                                </button>
+                            </form>
+                            <form action="{{ url_for('admin.delete_doc', doc_id=doc.id) }}" 
+                                  method="post" 
+                                  style="display: inline;"
+                                  onsubmit="return confirm('Delete this document?');">
+                                <button type="submit" 
+                                        class="btn btn-small btn-danger"
+                                        title="Delete">
+                                    🗑️
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if documents.pages > 1 %}
+        <div class="pagination">
+            {% if documents.has_prev %}
+                <a href="{{ url_for('admin.documents', page=documents.prev_num, category=request.args.get('category')) }}" 
+                   class="pagination-link">← Previous</a>
+            {% endif %}
+            
+            <span class="pagination-info">
+                Page {{ documents.page }} of {{ documents.pages }}
+            </span>
+            
+            {% if documents.has_next %}
+                <a href="{{ url_for('admin.documents', page=documents.next_num, category=request.args.get('category')) }}" 
+                   class="pagination-link">Next →</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

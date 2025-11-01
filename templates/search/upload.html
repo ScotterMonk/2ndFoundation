@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Documents - 2nd Foundation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Upload Documents</h1>
+    <p class="page-description">
+        Upload PDFs, Word documents, Markdown, or text files to add them to your searchable knowledge base.
+    </p>
+
+    <!-- Upload Statistics -->
+    <div class="upload-stats">
+        <div class="stat-item">
+            <strong>{{ stats.total_documents }}</strong> documents indexed
+        </div>
+        <div class="stat-item">
+            <strong>{{ stats.by_category|length }}</strong> categories
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="upload-section">
+        <form action="{{ url_for('main.upload') }}" 
+              method="post" 
+              enctype="multipart/form-data"
+              id="uploadForm"
+              class="upload-form">
+            
+            <!-- Drag and Drop Zone -->
+            <div class="dropzone" id="dropzone">
+                <div class="dropzone-content">
+                    <div class="dropzone-icon">📁</div>
+                    <p class="dropzone-text">Drag and drop files here</p>
+                    <p class="dropzone-subtext">or</p>
+                    <label for="fileInput" class="btn btn-primary">
+                        Choose Files
+                    </label>
+                    <input type="file" 
+                           id="fileInput" 
+                           name="files" 
+                           multiple 
+                           accept=".txt,.md,.pdf,.docx,.doc"
+                           style="display: none;">
+                </div>
+            </div>
+
+            <!-- Selected Files List -->
+            <div id="filesList" class="files-list" style="display: none;">
+                <h3>Selected Files</h3>
+                <ul id="filesListItems"></ul>
+            </div>
+
+            <!-- Optional Fields -->
+            <div class="upload-options">
+                <div class="form-group">
+                    <label for="category">Category (optional)</label>
+                    <select id="category" name="category" class="form-control">
+                        <option value="">Auto-detect</option>
+                        <option value="code_snippets">Code Snippets</option>
+                        <option value="ml_concepts">ML Concepts</option>
+                        <option value="general_knowledge">General Knowledge</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Upload Button -->
+            <button type="submit" class="btn btn-primary btn-large" id="uploadBtn">
+                Upload Documents
+            </button>
+        </form>
+
+        <!-- Upload Progress -->
+        <div id="uploadProgress" class="upload-progress" style="display: none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="progressText">Uploading...</p>
+        </div>
+    </div>
+
+    <!-- Supported Formats -->
+    <div class="supported-formats">
+        <h3>Supported Formats</h3>
+        <ul>
+            <li><strong>PDF</strong> - Portable Document Format</li>
+            <li><strong>DOCX/DOC</strong> - Microsoft Word documents</li>
+            <li><strong>TXT</strong> - Plain text files</li>
+            <li><strong>MD</strong> - Markdown documents</li>
+        </ul>
+        <p class="format-note">Maximum file size: 10 MB per file</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Drag and drop functionality
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const filesList = document.getElementById('filesList');
+const filesListItems = document.getElementById('filesListItems');
+
+// Prevent default drag behaviors
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+// Highlight dropzone on drag
+['dragenter', 'dragover'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => {
+        dropzone.classList.add('dropzone-active');
+    }, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => {
+        dropzone.classList.remove('dropzone-active');
+    }, false);
+});
+
+// Handle dropped files
+dropzone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    handleFiles(files);
+});
+
+// Handle selected files
+fileInput.addEventListener('change', (e) => {
+    handleFiles(e.target.files);
+});
+
+function handleFiles(files) {
+    if (files.length === 0) return;
+    
+    filesListItems.innerHTML = '';
+    filesList.style.display = 'block';
+    
+    Array.from(files).forEach(file => {
+        const li = document.createElement('li');
+        li.className = 'file-item';
+        li.innerHTML = `
+            <span class="file-name">${file.name}</span>
+            <span class="file-size">${formatFileSize(file.size)}</span>
+        `;
+        filesListItems.appendChild(li);
+    });
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+</script>
+{% endblock %}

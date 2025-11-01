@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - 2nd Foundation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Results Header -->
+    <div class="results-header">
+        <h1>Search Results</h1>
+        <div class="results-meta">
+            <span class="results-query">Query: <strong>{{ query }}</strong></span>
+            <span class="results-stats">
+                {{ results_count }} results in {{ "%.3f"|format(execution_time) }}s
+            </span>
+        </div>
+    </div>
+
+    <!-- New Search -->
+    <form action="{{ url_for('main.search') }}" method="post" class="inline-search-form">
+        <input type="text" 
+               name="query" 
+               value="{{ query }}" 
+               class="form-control"
+               placeholder="Refine your search...">
+        <button type="submit" class="btn btn-primary">Search Again</button>
+    </form>
+
+    <!-- Results List -->
+    {% if results %}
+        <div class="results-list">
+            {% for doc in results %}
+                <article class="result-card">
+                    <div class="result-header">
+                        <h2 class="result-title">
+                            <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}">
+                                {{ doc.title }}
+                            </a>
+                        </h2>
+                        <span class="result-category badge badge-{{ doc.category }}">
+                            {{ doc.category.replace('_', ' ').title() }}
+                        </span>
+                    </div>
+
+                    <p class="result-excerpt">
+                        {{ doc.content[:300] }}{% if doc.content|length > 300 %}...{% endif %}
+                    </p>
+
+                    <div class="result-footer">
+                        <span class="result-meta">
+                            Added {{ doc.created_at.strftime('%B %d, %Y') }}
+                        </span>
+                        <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}" 
+                           class="btn btn-secondary btn-small">
+                            View Full Document
+                        </a>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-results">
+            <div class="empty-icon">🔍</div>
+            <h2>No Results Found</h2>
+            <p>Try different keywords or check your spelling.</p>
+            <a href="{{ url_for('main.search') }}" class="btn btn-primary">
+                Try Another Search
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Submission Results - 2nd Foundation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Results Header -->
+    <div class="results-header">
+        <h1>Submission Results</h1>
+        <div class="result-status">
+            {% if submission.passed %}
+                <span class="status-badge status-passed">✓ PASSED</span>
+            {% else %}
+                <span class="status-badge status-failed">✗ FAILED</span>
+            {% endif %}
+            <span class="result-score">Score: {{ "%.1f"|format(submission.score * 100) }}%</span>
+        </div>
+    </div>
+
+    <!-- Metadata -->
+    <div class="submission-meta">
+        <div class="meta-item">
+            <strong>Model:</strong> {{ submission.model_name }}
+        </div>
+        <div class="meta-item">
+            <strong>Submitted:</strong> {{ submission.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+        </div>
+        <div class="meta-item">
+            <strong>Execution Time:</strong> {{ "%.3f"|format(submission.execution_time) }}s
+        </div>
+    </div>
+
+    <!-- Test Results Breakdown -->
+    <section class="test-results-section">
+        <h2>Test Results Breakdown</h2>
+        <div class="test-results-grid">
+            {% for test_result in submission.test_results %}
+                <div class="test-card {% if test_result.passed %}test-passed{% else %}test-failed{% endif %}">
+                    <div class="test-header">
+                        <span class="test-category">{{ test_result.category }}</span>
+                        {% if test_result.passed %}
+                            <span class="test-icon">✓</span>
+                        {% else %}
+                            <span class="test-icon">✗</span>
+                        {% endif %}
+                    </div>
+                    <p class="test-query"><strong>Query:</strong> {{ test_result.query }}</p>
+                    <p class="test-description">{{ test_result.description }}</p>
+                    
+                    {% if not test_result.passed %}
+                        <div class="test-error">
+                            <strong>Error:</strong> {{ test_result.error }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Security Issues -->
+    {% if submission.security_issues %}
+        <section class="security-section">
+            <h2>⚠️ Security Issues Detected</h2>
+            <ul class="security-list">
+                {% for issue in submission.security_issues %}
+                    <li class="security-item">{{ issue }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    <!-- Code Comparison -->
+    <section class="code-comparison-section">
+        <h2>Code Comparison</h2>
+        <div class="code-comparison">
+            <div class="code-panel">
+                <h3>Your Implementation</h3>
+                <pre class="code-block">{{ submission.code }}</pre>
+            </div>
+            <div class="code-panel">
+                <h3>Reference Implementation</h3>
+                <pre class="code-block">{{ reference_code }}</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Actions -->
+    <div class="results-actions">
+        <a href="{{ url_for('rl_task.submit') }}" class="btn btn-primary">
+            Submit Again
+        </a>
+        <a href="{{ url_for('rl_task.history') }}" class="btn btn-secondary">
+            View History
+        </a>
+    </div>
+</div>
+{% endblock %}

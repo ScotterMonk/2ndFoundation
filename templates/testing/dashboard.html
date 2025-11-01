@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Testing Dashboard - 2nd Foundation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Testing Dashboard</h1>
+    <p class="page-description">
+        Explore and run test cases for the hybrid search implementation.
+    </p>
+
+    <!-- Run All Tests Button -->
+    <div class="testing-actions">
+        <button id="runAllTests" class="btn btn-primary">
+            ▶️ Run All Tests
+        </button>
+        <a href="{{ url_for('testing.benchmark') }}" class="btn btn-secondary">
+            📊 View Benchmarks
+        </a>
+    </div>
+
+    <!-- Test Results Summary -->
+    <div id="testSummary" class="test-summary" style="display: none;">
+        <div class="summary-card">
+            <strong id="passedCount">0</strong> Passed
+        </div>
+        <div class="summary-card">
+            <strong id="failedCount">0</strong> Failed
+        </div>
+        <div class="summary-card">
+            <strong id="totalTime">0</strong>s Total Time
+        </div>
+    </div>
+
+    <!-- Test Cases by Category -->
+    {% for category, cases in categories.items() %}
+        <section class="test-category-section">
+            <h2>{{ category.replace('_', ' ').title() }}</h2>
+            <div class="test-cases-grid">
+                {% for test_case in cases %}
+                    <div class="test-case-card">
+                        <h3>{{ test_case.query }}</h3>
+                        <p class="test-description">{{ test_case.description }}</p>
+                        <div class="test-meta">
+                            <span>Expected: {{ test_case.expected_docs|length }} docs</span>
+                        </div>
+                        <a href="{{ url_for('testing.test_case_detail', test_id=test_case.id) }}" 
+                           class="btn btn-secondary btn-small">
+                            View Details
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('runAllTests').addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Running tests...';
+    
+    try {
+        const response = await fetch('{{ url_for("testing.run_all_tests") }}', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        
+        // Update summary
+        document.getElementById('testSummary').style.display = 'flex';
+        document.getElementById('passedCount').textContent = data.passed;
+        document.getElementById('failedCount').textContent = data.total_tests - data.passed;
+        document.getElementById('totalTime').textContent = 
+            data.results.reduce((sum, r) => sum + r.execution_time, 0).toFixed(2);
+        
+        alert(`Tests complete! ${data.passed}/${data.total_tests} passed`);
+    } catch (error) {
+        alert('Error running tests: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '▶️ Run All Tests';
+    }
+});
+</script>
+{% endblock %}

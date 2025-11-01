@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Home - 2nd Foundation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1 class="hero-title">🔮 2nd Foundation</h1>
+        <p class="hero-subtitle">
+            A searchable knowledge oracle: Upload documents, ask questions, 
+            get precise answers using hybrid semantic + keyword search.
+        </p>
+        
+        <!-- Quick Search -->
+        <form action="{{ url_for('main.search') }}" method="post" class="quick-search">
+            <input type="text" 
+                   name="query" 
+                   placeholder="Search your knowledge base..." 
+                   class="search-input"
+                   required>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </section>
+
+    <!-- Stats Cards -->
+    <section class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-value">{{ total_docs }}</div>
+                <div class="stat-label">Documents Indexed</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🔍</div>
+                <div class="stat-value">{{ total_searches }}</div>
+                <div class="stat-label">Searches Performed</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🤖</div>
+                <div class="stat-value">{{ total_submissions|default(0) }}</div>
+                <div class="stat-label">Model Submissions</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Activity -->
+    <section class="activity-section">
+        <div class="activity-grid">
+            <!-- Recent Searches -->
+            <div class="activity-card">
+                <h2>Recent Searches</h2>
+                {% if recent_searches %}
+                    <ul class="activity-list">
+                        {% for search in recent_searches %}
+                            <li class="activity-item">
+                                <span class="activity-text">{{ search.query }}</span>
+                                <span class="activity-meta">
+                                    {{ search.results_count }} results • 
+                                    {{ "%.2f"|format(search.execution_time) }}s
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="empty-state">No searches yet. Try searching above!</p>
+                {% endif %}
+            </div>
+
+            <!-- Recent Documents -->
+            <div class="activity-card">
+                <h2>Recent Documents</h2>
+                {% if recent_docs %}
+                    <ul class="activity-list">
+                        {% for doc in recent_docs %}
+                            <li class="activity-item">
+                                <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}" 
+                                   class="activity-link">
+                                    {{ doc.title }}
+                                </a>
+                                <span class="activity-meta">
+                                    {{ doc.category }} • 
+                                    {{ doc.created_at.strftime('%Y-%m-%d') }}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="empty-state">No documents yet. Upload some to get started!</p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features-section">
+        <h2>Key Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>🎯 Hybrid Search</h3>
+                <p>Combines semantic understanding with exact keyword matching using Reciprocal Rank Fusion.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📄 Multi-Format Support</h3>
+                <p>Upload PDFs, Word docs, Markdown, and text files. We extract and index everything.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🧠 Vector Embeddings</h3>
+                <p>Powered by sentence-transformers for semantic similarity search.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>⚡ Fast & Accurate</h3>
+                <p>PostgreSQL with pgVector for blazing-fast vector search at scale.</p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

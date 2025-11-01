@@ -1,4 +1,4 @@
-## Reference Implementation
+## Search functions reference
 
 **`app/core/search.py`** (Production implementation)
 

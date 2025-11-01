@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}RL Task - 2nd Foundation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>RL Task: Hybrid Search with RRF</h1>
+    
+    <!-- Task Stats -->
+    <div class="task-stats">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_submissions }}</div>
+            <div class="stat-label">Total Submissions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ passed_submissions }}</div>
+            <div class="stat-label">Passed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ "%.1f"|format(best_score * 100) }}%</div>
+            <div class="stat-label">Best Score</div>
+        </div>
+    </div>
+
+    <!-- Task Prompt -->
+    <div class="task-prompt">
+        <pre class="task-content">{{ task_prompt }}</pre>
+    </div>
+
+    <!-- Actions -->
+    <div class="task-actions">
+        <a href="{{ url_for('rl_task.submit') }}" class="btn btn-primary btn-large">
+            Submit Your Solution
+        </a>
+        <a href="{{ url_for('rl_task.history') }}" class="btn btn-secondary">
+            View Submission History
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,5 @@
-## Database Schema
+## Proposed Database Schema
+Before using, scrutinize this for accuracy and completeness:
 
 ```python
 # app/models.py
@@ -74,4 +75,14 @@ class TestCase(db.Model):
     expected_order = db.Column(db.JSON)     # List[int] - ranked order
     category = db.Column(db.String(100))    # 'keyword_heavy', 'semantic', 'hybrid'
     description = db.Column(db.Text)        # Why this test matters
+
+class User(db.Model):
+    """Users"""
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_name = db.Column(db.String(60), nullable=False)
+    pw_hashed = db.Column(db.String(256), nullable=False)
+    user_type = db.Column(db.Text, nullable=False) # user, admin
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 ```

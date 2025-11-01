@@ -26,7 +26,7 @@ These rankings are fused using RRF (Reciprocal Rank Fusion) to fairly reward doc
 
 Quick start
 1) Prerequisites
-- Python 3.11+
+- Python 3.13+
 - PostgreSQL 16+ with pgVector extension installed
 
 2) Clone and install
