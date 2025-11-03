@@ -38,11 +38,11 @@
 
 ### Modes
 For analysis/plan formation, referencing in Task instructions, or to determine when to mode-switch:
-- Planner - Architecting a `plan`, a 3-step process:
+- Planner - Architecting a `plan`, a 4-step process:
     - `/planner-a`: Planning 1 - create `phase(s)` from `user query`. Pass flow to `/planner-b`.
     - `/planner-b`: Planning 2 - refine output from `/planner-a`. Q/A. Pass flow to `/planner-c`.
     - `/planner-c`: Planning 3 - create `tasks` for each `phase`. Get user approval. Pass flow to `/planner-d`.
-    - `/planner-d`: Planning 3 - Q/A. Get user approval. Pass flow to `/orchestrator`.
+    - `/planner-d`: Planning 4 - Q/A. Get user approval. Pass flow to `/orchestrator`.
 - `/orchestrator`: Execute approved `plan` by coordinating tasks across modes.
 - `/code-monkey`: Coding, analysis, following instructions.
 - `/code`: Complex coding, analysis, debugging.
@@ -59,7 +59,7 @@ For analysis/plan formation, referencing in Task instructions, or to determine w
 Be brief; don't echo user requests.
 
 ### Modularization
-CRITICAL: Keep Python and JS files small, preferably less than 400 lines of code. 
+CRITICAL: Keep Python and JS files small and modular, preferably less than 400 lines of code. 
 Create and reference utility files (`@\utils`) liberally.
 
 ### Flask html templates
@@ -77,7 +77,7 @@ Use `jinja-html` language mode.
 - PascalCase for classes.
 
 ### Code Standards
-- All functions/classes MUST include: `# [Created-or-Modified] by [model] | yyyy-mm-dd_[iteration]`
+- All functions/classes MUST include: `# [Created-or-Modified] by [LLM model] | yyyy-mm-dd_[iteration]`
 - Templates use `jinja-html` language mode
 - Compact vertical spacing.
 - Multi-line strings for complex SQL queries.
@@ -211,7 +211,8 @@ Steps:
 7) Get `plan` approval.
     Loop through until user approves:
     - Brainstorm with user: refine and converge on the final approved `plan`.
-    - End loop when "'Approve and Start Work' or 'Modify Plan'" yields "Approve and Start Work".7) Get `plan` approval.
+    - End loop when "'Approve and Start Work' or 'Modify Plan'" yields "Approve and Start Work".
+8) Get `plan` approval.
 
 Loop through until user approves:
 - Brainstorm with user: refine and converge on the final approved `plan`.

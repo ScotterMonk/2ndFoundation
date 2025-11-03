@@ -1,5 +1,7 @@
 ## Proposed Database Schema
-Before using, scrutinize this for accuracy and completeness:
+PostgreSQL only (never SQLite) on port 5433
+See `.env` file for db credentials.
+Source of truth hierarchy: 1) Live PGDB → 2) `models/models_*.py` → 3) `database_schema.md`
 
 ```python
 # app/models.py

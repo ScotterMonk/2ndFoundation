@@ -14,6 +14,9 @@ Highlights for non-ML users
 ## Stack
 Python, Flask, Postgres with pgVector, HTML, CSS, JS
 
+## Current Status
+Scaffolding partially built.
+
 ## Navigation Menu / Pages / Flow
 
 ```
@@ -45,8 +48,7 @@ Python, Flask, Postgres with pgVector, HTML, CSS, JS
 - Batch processing progress
 - Upload history with status
 
-### 4. RL Task (`/rl-task/*`) - **Core Assignment Interface**
-
+### 4. RL Task (`/rl-task/*`)
 Note: the RL task focuses on **implementing a novel re-ranking and retrieval optimization techniques** that would challenge an AI model to demonstrate real-world ML engineering capabilities.
 
 **a) Overview (`/rl-task`)**

@@ -1,15 +1,14 @@
 ## Environment Configuration
+See/edit partially built `app/config.py` .env files.
 
 **`.env.example`**
 ```bash
 # Flask
 FLASK_APP=run.py
 FLASK_ENV=development
-SECRET_KEY=your-secret-key-here
 
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/second_foundation
-TEST_DATABASE_URL=postgresql://user:password@localhost:5432/second_foundation_test
+
 
 # Embeddings
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
