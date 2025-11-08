@@ -27,7 +27,7 @@
 - `credentials`: `@\.env`. User passwords in DB is hashed.
 - Web automation & browsing: `browser_action`
 - Database: 
-    - `@\.roo\rules\02-database.md`
+    - `.roo/rules/02-database.md`
     - [`database_schema.md`](.roo/docs/database_schema.md:1)
     - `@\utils\database.py`
     - `@\models\models_*.py`

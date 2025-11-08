@@ -38,7 +38,7 @@ Use these before acting:
 
 ## Workflow
 **CRITICAL**
-- Carefully follow `Default Workflow` in `@\.roo\rules\01-general.md`.
+- Carefully follow `Default Workflow` in `.roo/rules/01-general.md`.
 - Consistency and existing or similar patterns.
     **Avoid building redundant functions.**
     For example, before you create a function, be sure it does not already exist using all of the following methods:

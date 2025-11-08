@@ -1,12 +1,12 @@
 # Application
 
 ## Summary
-A searchable knowledge oracle: drag-and-drop your documents, let the app index them with embeddings and keywords, then ask natural-language questions to retrieve the best passages and files in seconds. The app runs locally or on a web server, stores data in PostgreSQL with pgVector, and uses a production-grade hybrid search that blends semantic and keyword relevance for precise, trustworthy results.
+A searchable knowledge oracle: drag-and-drop your documents, let the app index them with embeddings and keywords, then ask natural-language questions to retrieve the best passages and files in seconds. The app runs locally or on a web server, stores data in PostgreSQL with pgVector, and uses a production-grade hybrid RAG search where each chunk/entity has consistent metadata parameters (like "type" and "topic") that enable querying for related entities without the overhead of a full graph solution. Details and examples of this RAG approach here: `build_plan/ref-rag-details.md`
 
-Highlights for non-ML users
+Highlights for human devs and users
 - Upload PDFs, Word docs, Markdown, and text files
 - Automatic embeddings + keyword indexing for fast, accurate retrieval
-- Powerful hybrid search (semantic + exact keywords) with fair scoring
+- Hybrid search (semantic + exact keywords) with fair scoring
 - Clean web UI for Search, Uploads, Results history, Testing, Admin
 - Works offline (local models) or with cloud embeddings if desired
 - Secure by design: sandboxed execution, input sanitization, and best-practice deployment
@@ -15,7 +15,16 @@ Highlights for non-ML users
 Python, Flask, Postgres with pgVector, HTML, CSS, JS
 
 ## Current Status
-Scaffolding partially built.
+Scaffolding partially built:
+- `.env`
+- `config.py`
+- `models/`
+- `routes/`
+- `templates/`
+- `utils/`
+  - `database.py`
+  - `schema_commands.py`
+  - `schema_instructor.py`
 
 ## Navigation Menu / Pages / Flow
 

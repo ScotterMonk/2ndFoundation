@@ -24,7 +24,7 @@ Every one of these rules is important. Follow them carefully, skip nothing.
 
 ### Critical Resources
 Use these resources to thoroughly understand the application (expected behavior and existing patterns) before planning:
-See `Critical Resources` section in `@\.roo\rules\01-general.md`.
+See `Critical Resources` section in `.roo/rules/01-general.md`.
 Database:
 - Canonical sources:
     - Schema documentation: `@\.roo\docs\database_schema.md`
@@ -42,12 +42,12 @@ Database:
 
 ### Standards
 CRITICAL:
-- Follow the instructions in `Standards` section in `@\.roo\rules\01-general.md`.
-- See `@\.roo\rules\01-general.md` for naming conventions.
+- Follow the instructions in `Standards` section in `.roo/rules/01-general.md`.
+- See `.roo/rules/01-general.md` for naming conventions.
 
 ## Modes
 These are the following modes you can choose from to build into the `tasks` you create as mode hints:
-- See `@\.roo\rules\01-general.md` for modes.
+- See `.roo/rules/01-general.md` for modes.
 
 ## Workflow
 
