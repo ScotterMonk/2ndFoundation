@@ -19,9 +19,9 @@ Use a hybrid pre-graph RAG approach where each chunk/entity has consistent metad
 
 ## Example
 
-Chunk/Entity: "Apple fruit", embedding: [0.41, ...], type: Food, topic: Nutrition
-Chunk/Entity: "Apple company", embedding: [0.92, ...], type: Organization, topic: Tech
-Chunk/Entity: "run", embedding: [0.61, ...], type: Action, topic: Fitness
+Chunk/Entity: "Apple fruit", embedding regions: [0.41, ...], type: Food, topic: Nutrition
+Chunk/Entity: "Apple company", embedding regions: [0.92, ...], type: Organization, topic: Tech
+Chunk/Entity: "run", embedding regions: [0.61, ...], type: Action, topic: Fitness
 
 A query for tech organizations can filter for `type="Organization"` and `topic="Tech"`, retrieving “Apple company” without needing to use graph traversal.
 
