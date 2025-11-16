@@ -7,5 +7,5 @@ Use these resources thoroughly to understand expected behavior and existing patt
 See `Critical Resources` section in `.roo/rules/01-general.md`.
 
 ## Specific topics
-- Health: `.roo/rules/rules-ask\02-ask-health.md`
-- Flora growing: `.roo/rules/rules-ask\03-ask-flora-growing.md`
+- Health: `.roo/rules/rules-ask/02-ask-health.md`
+- Flora growing: `.roo/rules/rules-ask/03-ask-flora-growing.md`

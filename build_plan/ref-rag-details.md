@@ -1,4 +1,4 @@
-# Our hybrid RAG approach
+# Hybrid RAG approach
 
 Use a hybrid pre-graph RAG approach where each chunk/entity has consistent metadata parameters (like "type" and "topic") that enable querying for related entities without the overhead of a full graph solution.
 
