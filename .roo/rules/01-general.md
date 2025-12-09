@@ -1,70 +1,58 @@
-# ALL MODES - IMPORTANT
+# ALL MODES
 
 ## Environment & Commands
-- Windows 11: Use PowerShell/Windows commands.
-- Numbered instructions: Execute in order.
-- Global commands:
-    - "git update" → `/githubber` mode.
-    - "run", "run app", "turn on app", "server on" → `python app.py`.
-    - "activate" → `./activate.ps1`.
+- **Platform:** Windows 11. Use PowerShell syntax.
+- **Sequence:** Execute numbered steps in strict linear order. Do not skip or reorder.
+
+---
 
 ## Critical Resources
 
 ### Sources of knowledge
-- `app knowledge`: `agents.md`.
-- Codebase: `codebase_search`, `read_file`, `search_files`.
+- **App knowledge**: `agents.md`.
+    - *Contains:* Environment, Patterns, Docs, API Framework.
+- **Codebase**: `codebase_search`, `read_file`, `search_files`.
 - Git diff, recent commits.
-- `credentials` for everything: `.env`. User passwords in DB are hashed.
-- Database: see below.
-
-### Planning
-`plan values` to fill/use:
-- `short plan name`: yymmdd_two_word_description.
-- `user_query` and `user query file`: `.roo/docs/plans/plan_[timestamp]_[short plan name]_user.md`.
-- `plan file`: `.roo/docs/plans/plan_[short plan name].md`.
-- `plan`: Version of `plan file` in memory.
-- `log file`: `.roo/docs/plans/plan_[short plan name]_log.md`.
-    Logging Format:
-    `date + time; action summary` (semicolon separated).
-    - Ex: `"2025-08-14 07:23; Approved to begin"`.
-    - Ex: `"2025-08-14 07:25; Task completed: Added update_query() to utils_sql.py, refactored utils_sql.py, junk.py"`.
-- Backups: `.roo/docs/old_versions/[file name]_[timestamp]`.
-- `testing type`: "Run py scripts in terminal", "Use pytest", "Use browser", "Use all", "No testing", "Custom".
-- `completed plans folder`: `.roo/docs/plans_completed`.
+- **Credentials**: `.env`.
+- **Web automation** & **browsing**: `browser_action`
+- **Useful Discoveries**: Make use of and contribute to `.roo/docs/useful.md`.
 
 ### Database
 See `.roo/rules/02-database.md` for all database procedures.
 
-### Other
-- Web automation & browsing: `browser_action`
-- Make use of Useful Discoveries: `.roo/docs/useful.md`.
-
 ### Modes
-For analysis/plan formation, referencing in Task instructions, or to determine when to mode-switch:
-- Planner - Architecting a `plan`, a 4-step process:
-    - `/planner-a`: Planning stage 1 - create `phase(s)` from `user query`. Pass flow to `/planner-b`.
-    - `/planner-b`: Planning stage 2 - refine output from `/planner-a`. Q/A. Pass flow to `/planner-c`.
-    - `/planner-c`: Planning stage 3 - create `tasks` for each `phase`. Get user approval. Pass flow to `/planner-d`.
-    - `/planner-d`: Planning stage 4 - Q/A. Get user approval. Pass flow to `/orchestrator`.
-- `/orchestrator`: Execute approved `plan` by coordinating tasks across modes.
-- `/code-monkey`: Coding, analysis, following instructions.
-- `/code`: Complex coding, analysis, debugging.
-- `/tester`: Testing.
-- `/front-end`: Front-end.
-- `/ask`: General Q/A.
-- `/task-simple`: Small ops/tasks.
-- `/githubber`: Use GitHub commands.
-- `/debug`: Troubleshooting, investigating errors, or diagnosing problems.
+**Planning & Orchestration**
+- `/architect`: Simple planning. Create phases and tasks -> QA -> User Approval -> Switch to `/orchestrator`.
+- `/planner-a`: Complex Plan Stage 1. Create phases -> Brainstorm -> Switch to `/planner-b`.
+- `/planner-b`: Complex Plan Stage 2. Create detailed tasks -> User Approval -> Switch to `/planner-c`.
+- `/planner-c`: Complex Plan Stage 3. QA -> Finalize -> Switch to `/orchestrator`.
+- `/orchestrator`: Manage execution. Coordinate implementation modes to fulfill plan.
 
-### Best mode for job
-If another mode is more appropriate for your task, pass task and appropriate parameters (concise WTS) on to appropriate one. 
-Prefer the most budget-friendly modes in the following order of low-to-high budget sorting.
-Budget/Intelligence/Skill:
-    a) low (ex: renaming, copying, moving files; doing simple text/value comparison or replacement, copying column names and column parameters from a database): `/task-simple`.
-    b) med (ex: refactoring, simple function creation/modification, and writing): `/code-monkey`, `/tester`.
-    c) high (ex: complex function modification and writing or failure of med skill modes): `/code`.
-    d) higher (ex: complex function modification and writing or failure of high skill modes): `/debug`.
-If front-end task, use `/front-end`.
+**Implementation & Ops**
+- `/code`: Complex engineering, analysis, deep debugging.
+- `/code-monkey`: Routine coding, strict instruction adherence.
+- `/front-end`: UI implementation.
+- `/tester`: Test creation and execution.
+- `/debug`: Error investigation and diagnosis.
+- `/githubber`: GitHub CLI operations.
+- `/task-simple`: Small, isolated operations.
+- `/ask`: General inquiries.
+
+### Mode selection strategy
+**Evaluate** the current `task`. If another mode is more appropriate, **pass** the `task` and parameters (concise WTS) to that mode.
+**Prioritize** budget-friendly modes in this order (Low to High):
+1.  **Low Budget** (Renaming, moving files, simple text replacement, DB column copying)
+    - Use `/task-simple`
+2.  **Medium Budget** (Refactoring, simple function creation, writing)
+    - Use `/code-monkey` or `/tester`
+3.  **High Budget** (Complex modification, or if Medium fails)
+    - Use `/code`
+4.  **Highest Budget** (Debugging, or if High fails)
+    - Use `/debug`
+**Special Exception:**
+- **Front-End Tasks** (Medium or High complexity): **Always use** `/front-end`
+
+---
 
 ## Standards
 
@@ -72,80 +60,93 @@ If front-end task, use `/front-end`.
 Be brief; don't echo user requests.
 
 ### Modularization
-CRITICAL: Keep Python and JS files small and modular, preferably less than 400 lines of code. 
-Create and reference utility files (`utils/`) liberally.
+**Scope**: Critical for Python, JS, and logic files.
+- **Exception**: Do NOT apply this to CSS.
+
+**Hard Limit**:
+- **Enforce** a maximum of **450 lines of code** per file.
+- **Split** larger files: Create more files with fewer functions rather than exceeding this limit.
+
+**Utility Strategy**:
+- **Extract** logic liberally into utility folders.
+- **Naming Convention**: Use `utils/` or `utils_db/`.
 
 ### Simplification
-Reference `.roo/docs/simplification.md` when:
-- Implementing similar functionality multiple ways
-- Accumulating special case handling
-- Complexity spiraling in a module
-Look for the unifying principle that eliminates multiple components.
+Triggers: Redundancy, special cases, complexity.
+Action: Consult `.roo/docs/simplification.md`. Refactor to unifying principles.
 
-### Flask html templates
-Use `jinja-html` language mode.
+### Flask HTML Templates
+Constraint: Use `jinja-html` language mode for Flask templates.
+Enforcement: Re-apply `jinja-html` mode immediately after every save to prevent reversion.
 
-### Naming Conventions
-Rationale: Domain-first naming groups related code, improves IDE autocomplete, and makes file navigation logical.
-Pattern: {specific}_{domain} → {domain}_{specific}
-Definitions:
-- Domain: Core subject area (user, dashboard, config, sync, auth, billing)
-- Specific: Qualifier or action (admin, scott, core, edit, add, delete, list)
-Case Rules:
-- Files, functions, variables, DB tables/columns: snake_case
-- Classes: PascalCase
-Examples by Type:
-Files:
-- `admin_dashboard_utils.py` → `dashboard_utils_admin.py`
-- `scott_core_utils.py` → `utils_scott_core.py`
-Functions/Variables:
-- `edit_user` → `user_edit`
-- `add_user` → `user_add`
-Classes:
-- `AdminPerson` → `PersonAdmin`
-Do NOT rename without approval:
-- Public APIs (HTTP routes, library functions, CLI flags)
-- Database tables/columns (requires migration)
-- Standard Python patterns (`__init__.py`, `setUp()`)
-- Framework conventions (Django's `settings.py`)
-Prefer to:
-- Apply to new code always
-- Refactor internal names when editing that code
-- Keep tests/usage in sync
-Decision checklist:
-1) Public API or DB? → Get approval first
-2) Follows {specific}_{domain}? → Needs change
-3) Actively editing file? → Good time to rename
-4) Can identify domain/specific? → Proceed; otherwise ask
-Edge cases:
-- Multiple words: Use underscores (`utils_admin_user_profile.py`)
-- Ambiguous: Ask user or use most specific grouping
-CRITICAL: When renaming, refactor all references (imports, calls, docs, tests)
-After renaming, verify:
-- All imports updated
-- All function calls updated
-- Tests still pass
-- Documentation references updated
-- No VS Code Problems panel errors
+### Naming Conventions: Domain-First
+**Rationale**: Group related code by **Domain** (Subject) first, then **Specific** (Action/Qualifier).
+
+#### 1. The Core Pattern
+**Invert the standard naming order:**
+- **Bad**: `{specific}_{domain}` (e.g., `edit_user`)
+- **Good**: `{domain}_{specific}` (e.g., `user_edit`)
+
+**Casing Rules**:
+- **snake_case**: Files, functions, variables, DB tables/columns.
+- **PascalCase**: Classes.
+
+#### 2. Transformation Examples
+| Type | Old Pattern | **New Pattern (Target)** | Note |
+| :--- | :--- | :--- | :--- |
+| **Files** | `admin_dashboard_utils.py` | `dashboard_utils_admin.py` | Domain is `dashboard` |
+| **Functions** | `edit_user` | `user_edit` | Domain is `user` |
+| **Classes** | `AdminPerson` | `PersonAdmin` | Better: Use `Person` w/ type param |
+
+#### 3. Scope & Restrictions
+**When to Apply**:
+- **New Code**: **Always** apply this pattern.
+- **Existing Code**: Apply **only** if you are already actively editing the file.
+
+**STOP! Do NOT rename without explicit approval:**
+- **Public APIs**: HTTP routes, library exports, CLI flags.
+- **Database**: Tables and columns (requires migration).
+- **Standards**: `__init__.py`, `setUp()`, `settings.py` (Django).
+
+---
+
+#### 4. CRITICAL: Refactoring Checklist
+**If you rename a symbol, you MUST fix all references.**
+Before finishing, verify:
+1.  [ ] **Imports**: Updated in all other files?
+2.  [ ] **Calls**: Function/Class usage updated everywhere?
+3.  [ ] **Tests**: Do tests still pass?
+4.  [ ] **Docs**: Updated docstrings/comments?
+5.  [ ] **VS Code**: No errors in the Problems panel?
 
 ### Code Standards
-- All functions/classes MUST include: `# [Created-or-Modified] by [LLM model] | yyyy-mm-dd_[iteration]`
-- Templates use `jinja-html` language mode
-- Compact vertical spacing.
-- Multi-line strings for complex SQL queries.
-- Prioritize readable code over compact syntax.
-- Prioritize quotes over semi-quotes. Ex:
+
+#### 1. Mandatory Metadata
+**Every** function or class you touch MUST have this comment header:
 ```python
-fixed += "."
+# [Created-or-Modified] by [Model_Name] | YYYY-MM-DD_[Iteration]
+# Example: # Modified by Claude-3.5-Sonnet | 2024-10-27_01
 ```
-- Simple solutions.
-- Preserve existing comments.
-- Comment liberally.
-- File operations
-    - On name collisions, append _[timestamp].
-- Tool preference for web:
-    - Default: `browser_action`.
-    - Fallback: Use any other browser tooling only if `browser_action` is unavailable or misconfigured.
+#### 2. Syntax & Style
+Quotes: Enforce Double Quotes (") over Single Quotes (').
+Good: x += "."
+Bad: x += '.'
+SQL: Always use Multi-line strings (""") for complex queries.
+Templates: Set language mode to jinja-html.
+Spacing: Keep vertical spacing compact (no excessive blank lines).
+Readability: Prioritize Readable Code over "clever" one-liners.
+
+#### 3. Comments
+Preserve: Do NOT delete existing comments.
+Add: Comment liberally. Explain why, not just what.
+
+#### 4. Logic & Operations
+File Collisions: If a file exists, append _[timestamp] to the new filename.
+Simplicity: Choose the simplest working solution.
+
+#### 5. Tooling Preference (Web)
+Primary: browser_action (ALWAYS try this first).
+Fallback: Other browser tools (Only if browser_action fails).
 
 ### Markdown syntax
 
@@ -155,223 +156,90 @@ fixed += "."
 - Headers immediately followed by content
 - Single empty line between major sections only
 
-#### File References
-- Simplify; avoid brackets and keep succinct: [`utils_db/media_utils.py`](utils_db/media_utils.py:1) -> `utils_db/media_utils.py`.
+#### Reference Formatting Rules
+Strictly enforce the following formatting for all file paths and references to reduce noise:
+- No Markdown Links: Never use [name](path) syntax. Use plain backticks only.
+- No Line Numbers: Strip all line number suffixes (e.g., :22).
+- No Redundancy: Do not repeat the filename in brackets and parentheses.
+- Contextual Pointers: When referencing specific sections, name the section instead of using line numbers.
+Examples:
+Bad: [app/models/user.py](app/models/user.py)
+Good: `app/models/user.py`
+Bad: [user.py](app/models/user.py:50)
+Good: `app/models/user.py`
+Bad: See `.roo/rules/01-general.md`
+Good: See `Critical Resources` in `.roo/rules/01-general.md`
 
-#### Formatting
-- Use 4-space indentation for nested items.
-- Numbered lists with `)` separator: `1)`, `2)`
-- Avoid double-asterisks: "**Impact:**" -> "Impact:".
-- Keep it small/no redundancy: [`models/models_user.py`](app/models/models_user.py) -> `models/models_user.py`.
-- Use colons for emphasis instead of bold.
-- Back-ticks for code/file references, not brackets.
-- Simple, direct formatting.
-- Compact bullet points without extra spacing.
-- Related items grouped tightly.
-- Clear section breaks with single empty line.
-- Immediate content after headers.
+#### Formatting Standards
+**Strictly enforce** the following minimalist formatting rules.
+**Style & Typography**
+- **References:** Use inline code backticks (e.g., `file.py`) for files and code. Never use brackets or links.
+- **Indentation:** Use exactly 4 spaces for nested items.
+**Lists & Spacing**
+- **Numbering:** Use `)` as the separator (e.g., `1)`, `2)`). Never use periods (`1.`).
+- **Density:** No empty lines between list items. Group related items tightly.
+- **Headers:** Content must start on the very next line after a header. Do not insert an empty line.
+**Examples**
+**Bad** (Wrong list style, extra spacing):
+```markdown
+## Analysis
 
-#### Examples
-Good:
-```
-## Section
-Content immediately follows.
-- Item one
-- Item two
-- Item three
-```
+**Points:**
 
-Avoid:
-```
-## Section
+1. First item
 
-Content with extra spacing.
-
-- Item one
-
-- Item two
+2. Second item
 ```
 
-## Default Workflow
+**Good** (Compact, correct list style):
+```markdown
+## Analysis
+**Points:**
+1) First item
+    - Nested detail
+2) Second item
+```
 
-Do in order, skip none:
-
-### 1 Input
-From user:
-- store as `user query`.
-
-### 2: Initialization
-Remember you are planning, not building.
-Do not skip any of the following steps. Follow each one in order.
-1) Determine if this is a new `plan` or continuation. If unknown, examine files below to determine.
-- `log file` (create new if needed):
-	- If an existing log is non-empty or references a previous plan, move it to `completed plans folder`.
-    - Log entries: `date + time; action summary`.
-        - Ex: `"2025-08-14 07:23; Approved to begin"`.
-        - Ex: `"2025-08-14 07:24; Task completed: Added update_query() to utils_sql.py, refactored utils_sql.py, junk.py"`.
-2) Determine `short plan name` based on user query.
-3) Save `user query` into `user query file`.
-4) Create or modify `plan file`.
-- If an existing plan is non-empty or from a past project, move it to `completed plans folder`.
-- Create a fresh `plan file`.
-For the following steps 5 through 6, be sure to determine these 2 settings as separate questions to user.
-5) Project size/complexity?
-    `plan` can have one or more `phase(s)` and each `phase` has one or more `task(s)`.
-    If new `plan`, IMPORTANT to offer user following choices:
-    - "One Phase (tiny or small project), one or few tasks"
-    - "One Phase (small to medium project), one or many tasks"
-    - "Few Phases (medium project), many tasks"
-    - "Multi-Phase (larger project), many tasks per phase"
-6) FOLLOW THIS INSTRUCTION EXACTLY: SEPARATELY FROM size/complexity above and testing types below, Ask User: `autonomy level` for `plan`. Determine autonomy level separate from testing type below. Choices: "Low" (frequent direction), "Med", "High" (rare direction).
-7) FOLLOW THIS INSTRUCTION EXACTLY: SEPARATELY from choices above, Ask User `testing type` for `plan`, Choices: "Run py scripts in terminal", "Use pytest", "Use browser", "Use all", "No testing", "Custom". Important: provide these exact choices to the user.
-8) Understand the ask: Problem/feature, intent, scope, constraints, dependencies.
-
-### 3: Pre-planning
-1) Search for similar planning documents and architectural decisions.
-2) Retrieve project history and previous relevant planning outcomes from memory.
-3) Identify potential challenges based on past experiences.
-
-### 4: Understand user need
-1) Understand user's need.
-    Draft a high level pre-plan based on `user query` with no tasks yet:
-    Take your time to brainstorm with user and think through the `user query` carefully. 
-    - Resolve contradictions, errors in logic, and ambiguity to increase clarity.
-    - Ask clarifying questions of user.
-    - Take all the time necessary until you are confident you have a solid understanding of the `user query`. 
-2) Save progress:
-    Save this beginning stage of the `plan`
-    (succinctly describing `user query` and succinct description of solution) 
-    to a new `plan file`.
-
-### 5: Create plan phase(s)
-Notes:
-- Outline `phase(s)`, depending on user's "one-phase or multi-phase" choice above.
-You MUST complete each step below before proceeding to the next.
-Steps:
-1) Add `phase(s)` to `plan`.
-    Draft a high level `plan` based on `user query` with no tasks yet:
-    - Real implementations only: Phases should specify real functionality (actual database calls, API integrations, etc.); 
-        no mock/simulated versions unless requested.
-    - Identify existing functionality that can be copied, leveraged, or modified to be more general. 
-3) Think through the draft `plan`, step-by-step, looking specifically for ways it could be improved.
-    Loop through each `phase` to:
-    - Explore relevant values in `Critical Resources`;
-    - Ask clarifying questions of user.
-    - Move on when you have full confidence.
-    Modify the `plan file` when you are confident in the draft high level `plan`.
-4) Open the `plan file` in main editor window for user to easily edit and approve:
-    Brainstorm on the `plan` with user to resolve any questions, issues, or ambiguity.
-    - Modify the `plan file` as changes occur.
-5) Finalize the high level `plan` (no tasks yet):
-    - Important: think it through carefully. 
-    - Take all the time necessary until you are confident you have come up with a solid high level `plan`.
-    - Do not offer a time estimate.
-6) Modify the `plan file` to be in sync with latest `plan`.
-7) Open the `plan file` in main editor window for user to easily edit and approve.
-    Loop through until user approves:
-    - Brainstorm with user: refine and converge on the final approved high level `plan`.
-    - End loop when "'Approve and pass to next planner level' or 'Modify this high level plan'" yields "Approve and pass to next planner level".
-
-### 6: Add detailed tasks
-Notes:
-    - Incorporate (or not) testing into the plan based on user's `testing type` choice.
-    - If creating tests: First be sure test does not already exist.
-    - Remember you are creating a plan for another mode to build, not building.
-    - Use `Sources of knowledge` to check if proposed functionality already exists.
-    - Explicitely add refactoring to appropriate stages as tasks.
-You MUST complete each step below before proceeding to the next.
-- Take all the time necessary until you are confident each task meets all task criteria detailed below.
-Steps:
-1) Modify `plan` to have detailed `task(s)`:
-    - Real implementations only: Tasks should specify real functionality 
-        (actual database calls, API integrations, etc.); no mock/simulated versions unless requested.
-    - CRITICAL: Task structure. Tasks must follow these rules:
-        - Each task = ONE atomic action only. Use "Action:" instead of "Steps:" to reinforce this. 
-        - NO multi-step instructions within tasks.
-        - Avoid numbered sub-steps within tasks.
-        - NO complex dependencies between tasks.
-        - Tasks must be self-contained and executable independently.
-        - **Avoid building redundant functions.**
-            Search codebase and memory to determine if exact OR SIMILAR script already exists.
-            Use existing related files, components, and utilities that can be leveraged or modified to be more general.
-            For example, before you create a function or class, make sure it does not already exist.
-			Use all of the following methods:
-            - Use `codebase_search`.
-            - Use `agents.md`.
-        - Add mode hints, integration points, and acceptance criteria.
-		- Q/A mode hints. 
-            CRITICAL that this is done accurately. Consult user if unsure which mode to assign for a task.
-            Prefer the most budget-friendly modes in the following order of low-to-high budget sorting:
-            See `Best mode for job` above.
-		- Task structure example:
-			```md
-			[High level description of goal for the plan.]
-			[Some notes.]
-			- Task 01: [Task description.]
-				Mode hint: /task-simple.
-				[Notes relevant to this task.]
-				[Potential code or pseudocode.]
-				[Potential test.]
-			- Task 02: [Task description.]
-				Mode hint: /code-monkey.
-				[Notes relevant to this task.]
-				[Potential code or pseudocode.]
-				[Potential test.]
-			```
-        - Include pseudo-code or code where appropriate to clarify concepts and create ease/efficiency for worker.
-2) Open the new `plan file` in main editor window for user to easily examine/edit.
-3) Brainstorm on the `plan` with user to resolve any questions, issues, or ambiguity.
-    Loop through the following until you have a clear understanding of the user's need (keeping aware of `autonomy level`):
-    - Explore values in `Critical Resources & Standards`;
-    - Ask clarifying questions of user.
-    - Modify the `plan file` and `log file` as changes occur.
-
-### 7: Refine the plan
-Loop through until user approves:
-Notes:
-- Brainstorm with user: refine and converge on the final approved `plan`.
-- End loop when "Approve and Start Work or Modify Plan" yields "Approve and Start Work".
-- Follow each step below in order, with precision, skip none.
-1) Do the work.
-2) QA
-- Resolve VS Code Problems.
-- Use `codebase_search` for impact analysis.
-- Call `/tester` mode when needed, but not if `testing type` is "No testing".
-- Document `useful discoveries`, including any new patterns or best practices discovered.
-3)  Completion
-- Update `log file`, `plan file`.
-- User confirmation: user satisfied or has additional instructions.
-- Archive completed plan/log files to `.roo/docs/plans_completed/`. Append "_[iteration]" if collision.
-4)  Continuous Learning Protocol.
-- Analyze what worked well and what could be improved.
-- Store successful approaches and solutions in memory.
-- Update memory with lessons learned from the work.
-- Identify areas where additional codebase exploration might be beneficial.
+---
 
 ## Testing
 
-### Running python scripts in terminal
-Never run py scripts longer than one line in terminal.
-With python scripts longer than a line:
-1) Search codebase and memory to determine if exact or similar script already exists.
-    (a) Exact one exists: Use the script.
-    (b) Similar one exists: 
-        - Find what other objects depend on the script.
-        - Decide if modification or duplication is better.
-        - Modify or duplicate.
-2) Run the script.
+### Python Script Execution
+**Constraint:** Do not execute multi-line Python scripts directly in the terminal.
 
-### Browser Testing (web automation / browsing)
-See `agents.md` for browser use procedures.
+**Procedure for Multi-line Scripts:**
+1) **Search:** Check codebase and memory for existing scripts.
+2) **Evaluate:**
+    - **Exact Match Found:** Execute the existing script.
+    - **Similar Match Found:**
+        - Analyze dependencies (what relies on this script?).
+        - Determine strategy: Modify existing vs. Duplicate new.
+        - Execute the modified or duplicated script.
+    - **No Match:** Create a new script file, then execute it.
+
+---
+
+Here is the improved version, focusing on strict payload requirements and clear protocols:
 
 ## Mode Communication
-Delegating via `message` param and include:
-- If using `plan`: Relevant `plan` details.
-- Relevant bug/issue details.
-- Implementation instructions.
-- Return command when complete.
-- Reply requirement via `result` param with outcome summary.
+**Mechanism:** Delegate tasks strictly via the `message` parameter.
 
-## Error Handling and QA
-- Verify console and VS Code Problems panel after changes
-- Document notable findings in `.roo/docs/useful.md` (see Documentation in `agents.md`
+**Payload Requirements:**
+- **Context:** Include relevant bug/issue details. If a `plan` is active, include pertinent sections.
+- **Instructions:** Provide specific, actionable implementation steps.
+- **Completion Trigger:** Specify the exact command to return when the task is finished.
+
+**Response Protocol:**
+- Mandate a reply via the `result` parameter containing a concise summary of the outcome.
+
+---
+
+Here is the improved version, emphasizing mandatory checks and knowledge retention:
+
+## Error Handling & QA
+**Validation**
+- **Immediate Check:** Inspect terminal output and VS Code Problems panel after *every* edit.
+- **Fix First:** Resolve regressions or new errors before proceeding.
+
+**Documentation**
+- **Log Findings:** Append significant bugs, non-obvious fixes, or environment quirks to `.roo/docs/useful.md`.
