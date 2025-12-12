@@ -1,4 +1,8 @@
+.roo/
+notes/
+venv/
 desktop.ini
-n8n/backup/
-notes/*.afphoto
+config.*
+*.afphoto
 .env
+activate.ps1
