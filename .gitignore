@@ -4,5 +4,6 @@ venv/
 desktop.ini
 config.*
 *.afphoto
+*.af
 .env
 activate.ps1
