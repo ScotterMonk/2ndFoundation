@@ -1,9 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python/
+
+# VSCode
+.vscode/
+*.code-workspace
 .roo/
-notes/
+
+# Env
 venv/
 desktop.ini
 config.*
-*.afphoto
-*.af
 .env
 activate.ps1
+
+# Misc
+notes/
+*.af
+*.afphoto
